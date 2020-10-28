@@ -25,18 +25,25 @@ export function useGameState() {
   return { updateKey, game };
 }
 
-export interface GameStateProps {
+interface GameStateBaseProps {
   children: React.ReactNode;
-  type: "guest" | "host";
-  player: Pick<Player, "uid" | "name">;
   hostUid: string;
 }
 
-function GameState({ children, type, player, hostUid }: GameStateProps) {
+export interface HostGameStateProps extends GameStateBaseProps {
+  type: "host";
+}
+
+export interface GuestGameStateProps extends GameStateBaseProps {
+  type: "guest";
+  player: Pick<Player, "uid" | "name">;
+}
+
+export type GameStateProps = HostGameStateProps | GuestGameStateProps;
+
+function GameState({ children, ...props }: GameStateProps) {
   const [game] = useState(() =>
-    type === "host"
-      ? new GameHost({ player, hostUid })
-      : new GameGuest({ player, hostUid })
+    props.type === "host" ? new GameHost(props) : new GameGuest(props)
   );
 
   return (

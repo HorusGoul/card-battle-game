@@ -18,7 +18,9 @@ export interface RequestToJoinResponseDto extends DtoBase {
   payload:
     | {
         type: "accepted";
-        host: Pick<Player, "uid" | "name">;
+
+        // TODO: define game state
+        state: any;
       }
     | {
         type: "rejected";

@@ -1,7 +1,7 @@
 import { createGameDeck, Deck } from "./Deck";
 import { Player } from "./Player";
 import { boundMethod } from "autobind-decorator";
-import { DataConnection } from "peerjs";
+import Peer, { DataConnection } from "peerjs";
 import {
   createDto,
   GameDto,
@@ -10,31 +10,30 @@ import {
   RequestToJoinResponseDto,
 } from "./Game.dtos";
 
+const HOST_PREFIX = "host" as const;
+
 export interface GameConstructorParams {
-  player: Pick<Player, "uid" | "name">;
   hostUid: Player["uid"];
+  peerId?: string;
 }
 
 export abstract class Game {
   abstract type: "host" | "guest";
   deck: Deck = createGameDeck();
-  abstract host: Player | null;
-  player: Player;
   players: Player[] = [];
   online = false;
   hostUid: Player["uid"];
+  peer: Peer;
 
   private updateSubscriptions: ((game: Game) => void)[] = [];
 
-  constructor({ player, hostUid }: GameConstructorParams) {
+  constructor({ hostUid, peerId = hostUid }: GameConstructorParams) {
     this.hostUid = hostUid;
 
-    this.player = new Player({
-      ...player,
-      game: this,
+    this.peer = new Peer(peerId, {
+      host: "card-battle-game-peerjs-server.herokuapp.com",
+      port: 80,
     });
-
-    this.players = [this.player];
 
     this.setup();
   }
@@ -53,9 +52,9 @@ export abstract class Game {
 
   @boundMethod
   protected setup(): void {
-    this.player.peer.on("open", this.onPeerOpen);
-    this.player.peer.on("disconnected", this.onPeerDisconnected);
-    this.player.peer.on("connection", this.onPeerConnection);
+    this.peer.on("open", this.onPeerOpen);
+    this.peer.on("disconnected", this.onPeerDisconnected);
+    this.peer.on("connection", this.onPeerConnection);
   }
 
   @boundMethod
@@ -83,14 +82,22 @@ export abstract class Game {
   protected log(...params: any[]) {
     const onlineStatus = this.online ? `🟢` : `🔴`;
 
-    console.log(`%c${onlineStatus} [Game]`, "color: blue;", ...params);
+    console.log(
+      `%c${onlineStatus} [${this.constructor.name}]`,
+      "color: blue;",
+      ...params
+    );
   }
 
   @boundMethod
   protected error(...params: any[]) {
     const onlineStatus = this.online ? `🟢` : `🔴`;
 
-    console.error(`%c${onlineStatus} [Game]`, "color: red;", ...params);
+    console.error(
+      `%c${onlineStatus} [${this.constructor.name}]`,
+      "color: red;",
+      ...params
+    );
   }
 
   protected async rpcCall<T extends GameDto>(
@@ -199,12 +206,9 @@ export abstract class Game {
 
 export class GameHost extends Game {
   type = "host" as const;
-  host: Player;
 
-  constructor(params: GameConstructorParams) {
-    super(params);
-
-    this.host = this.player;
+  constructor({ hostUid }: GameConstructorParams) {
+    super({ hostUid, peerId: `${HOST_PREFIX}${hostUid}` });
   }
 
   @boundMethod
@@ -257,10 +261,7 @@ export class GameHost extends Game {
           type: "request-to-join-response-dto",
           payload: {
             type: "accepted",
-            host: {
-              name: this.host.name,
-              uid: this.host.uid,
-            },
+            state: {},
           },
         })
       );
@@ -272,9 +273,20 @@ export class GameHost extends Game {
   }
 }
 
+export interface GuestGameConstructorParams extends GameConstructorParams {
+  player: Pick<Player, "uid" | "name">;
+}
+
 export class GameGuest extends Game {
   type = "guest" as const;
   host = null;
+  player: Player;
+
+  constructor({ player, hostUid }: GuestGameConstructorParams) {
+    super({ hostUid, peerId: player.uid });
+
+    this.player = new Player({ ...player, game: this });
+  }
 
   @boundMethod
   protected onPeerOpen(id: string) {
@@ -284,7 +296,7 @@ export class GameGuest extends Game {
   }
 
   private async connectToHost() {
-    const connection = this.player.peer.connect(this.hostUid, {
+    const connection = this.peer.connect(`${HOST_PREFIX}${this.hostUid}`, {
       reliable: true,
     });
 
@@ -331,9 +343,7 @@ export class GameGuest extends Game {
         return;
       }
 
-      const { host } = response.payload;
-
-      this.log(`Succesfully joined ${host.name} (${host.uid}) game`);
+      this.log(`Succesfully joined game`);
 
       // TODO: set host connection
     } catch (e) {

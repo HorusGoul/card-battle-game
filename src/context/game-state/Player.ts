@@ -14,7 +14,6 @@ export class Player {
   name: string;
   game: Game;
   hand: Deck | null;
-  peer: Peer;
   connection: DataConnection | null = null;
 
   constructor({ uid, name, game, hand = null }: PlayerConstructorParams) {
@@ -22,13 +21,9 @@ export class Player {
     this.name = name;
     this.game = game;
     this.hand = hand;
-    this.peer = new Peer(this.uid, {
-      host: "card-battle-game-peerjs-server.herokuapp.com",
-      port: 80,
-    });
   }
 
   get isHost() {
-    return this === this.game.host;
+    return false;
   }
 }

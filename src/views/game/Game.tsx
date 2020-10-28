@@ -9,15 +9,26 @@ function Game() {
 
   const type = params.uid === settings.uid ? "host" : "guest";
 
-  return (
+  const guestJsx = (
     <GameState
-      type={type}
+      type="guest"
       player={{ name: settings.name, uid: settings.uid }}
       hostUid={params.uid}
     >
-      <OnlineStatus />
+      Client: <OnlineStatus />
     </GameState>
   );
+
+  if (type === "host") {
+    return (
+      <GameState type="host" hostUid={params.uid}>
+        Server: <OnlineStatus />
+        {guestJsx}
+      </GameState>
+    );
+  }
+
+  return guestJsx;
 }
 
 export default Game;
