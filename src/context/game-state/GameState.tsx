@@ -29,11 +29,14 @@ export interface GameStateProps {
   children: React.ReactNode;
   type: "guest" | "host";
   player: Pick<Player, "uid" | "name">;
+  hostUid: string;
 }
 
-function GameState({ children, type, player }: GameStateProps) {
+function GameState({ children, type, player, hostUid }: GameStateProps) {
   const [game] = useState(() =>
-    type === "host" ? new GameHost({ player }) : new GameGuest({ player })
+    type === "host"
+      ? new GameHost({ player, hostUid })
+      : new GameGuest({ player, hostUid })
   );
 
   return (

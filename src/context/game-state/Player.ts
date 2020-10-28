@@ -1,4 +1,4 @@
-import Peer from "peerjs";
+import Peer, { DataConnection } from "peerjs";
 import { Deck } from "./Deck";
 import { Game } from "./Game";
 
@@ -14,14 +14,15 @@ export class Player {
   name: string;
   game: Game;
   hand: Deck | null;
-  connection: Peer;
+  peer: Peer;
+  connection: DataConnection | null = null;
 
   constructor({ uid, name, game, hand = null }: PlayerConstructorParams) {
     this.uid = uid;
     this.name = name;
     this.game = game;
     this.hand = hand;
-    this.connection = new Peer(this.uid, {
+    this.peer = new Peer(this.uid, {
       host: "card-battle-game-peerjs-server.herokuapp.com",
       port: 80,
     });

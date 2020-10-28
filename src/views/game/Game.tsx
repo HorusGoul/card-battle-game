@@ -10,7 +10,11 @@ function Game() {
   const type = params.uid === settings.uid ? "host" : "guest";
 
   return (
-    <GameState type={type} player={{ name: settings.name, uid: settings.uid }}>
+    <GameState
+      type={type}
+      player={{ name: settings.name, uid: settings.uid }}
+      hostUid={params.uid}
+    >
       <OnlineStatus />
     </GameState>
   );
