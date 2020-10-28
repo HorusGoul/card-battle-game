@@ -5,12 +5,9 @@ import reportWebVitals from "./reportWebVitals";
 import "minireset.css";
 import "./index.scss";
 
-ReactDOM.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-  document.getElementById("root")
-);
+// cannot use React.StrictMode with PeerJS :(
+// as it renders the tree two times
+ReactDOM.render(<App />, document.getElementById("root"));
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))

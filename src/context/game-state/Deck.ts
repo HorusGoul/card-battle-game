@@ -1,7 +1,7 @@
 import shuffle from "lodash.shuffle";
 import { Card } from "./Card";
 
-class Deck {
+export class Deck {
   private cards: Card[] = [];
 
   constructor(cards: Card[]) {
