@@ -1,12 +1,16 @@
 import React from "react";
-import uid from "uid";
+import { useParams } from "react-router";
 import GameState, { useGameState } from "../../context/game-state/GameState";
-
-const sessionUid = uid();
+import { usePlayerSettings } from "../../context/player-settings";
 
 function Game() {
+  const params = useParams<{ uid: string }>();
+  const { settings } = usePlayerSettings();
+
+  const type = params.uid === settings.uid ? "host" : "guest";
+
   return (
-    <GameState type="host" player={{ name: "Horus", uid: sessionUid }}>
+    <GameState type={type} player={{ name: settings.name, uid: settings.uid }}>
       <OnlineStatus />
     </GameState>
   );
