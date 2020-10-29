@@ -1,5 +1,5 @@
 import { createGameDeck, Deck } from "./Deck";
-import { Player } from "./Player";
+import { Player, ServerPlayer } from "./Player";
 import { boundMethod } from "autobind-decorator";
 import Peer, { DataConnection } from "peerjs";
 import {
@@ -9,8 +9,14 @@ import {
   RequestToJoinDto,
   RequestToJoinResponseDto,
 } from "./Game.dtos";
+import { Host } from "./Host";
 
 const HOST_PREFIX = "host" as const;
+
+export interface RPCOptions {
+  timeoutMs?: number;
+  closeOnTimeout?: boolean;
+}
 
 export interface GameConstructorParams {
   hostUid: Player["uid"];
@@ -48,6 +54,116 @@ export abstract class Game {
         (current) => current !== subscription
       );
     };
+  }
+
+  async rpcCall<T extends GameDto>(
+    dto: GameDto,
+    connection: DataConnection,
+    { timeoutMs = 5000, closeOnTimeout = false }: RPCOptions
+  ): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        if (timeoutMs === 0) {
+          return;
+        }
+
+        if (closeOnTimeout) {
+          connection.close();
+        }
+
+        reject(new Error(`Connection with ${connection.peer} timed out`));
+      }, timeoutMs);
+
+      function onClose() {
+        offEvents();
+        reject(new Error(`Connection with ${connection.peer} closed`));
+      }
+
+      function onError(error: any) {
+        offEvents();
+        reject(error);
+      }
+
+      function onData(data: unknown) {
+        if (!isGameDto(data)) {
+          return;
+        }
+
+        if (data.replyTo !== dto.id) {
+          return;
+        }
+
+        offEvents();
+        resolve(data as T);
+      }
+
+      function offEvents() {
+        connection.off("data", onData);
+        connection.off("error", onError);
+        connection.off("close", onClose);
+        clearTimeout(timeout);
+      }
+
+      connection.on("data", onData);
+      connection.on("close", onClose);
+      connection.on("error", onClose);
+
+      connection.send(dto);
+    });
+  }
+
+  async waitForMessageOfType<T extends GameDto>(
+    type: T["type"],
+    connection: DataConnection,
+    { timeoutMs = 5000, closeOnTimeout = false }: RPCOptions
+  ): Promise<T> {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        if (timeoutMs === 0) {
+          return;
+        }
+
+        if (closeOnTimeout) {
+          connection.close();
+        }
+
+        reject(new Error(`Connection with ${connection.peer} timed out`));
+      }, timeoutMs);
+
+      function onClose() {
+        offEvents();
+        reject(new Error(`Connection with ${connection.peer} closed`));
+      }
+
+      function onError(error: any) {
+        offEvents();
+        reject(error);
+      }
+
+      function onData(data: unknown) {
+        if (!isGameDto(data)) {
+          return;
+        }
+
+        if (data.type !== type) {
+          return;
+        }
+
+        offEvents();
+        resolve(data as T);
+      }
+
+      function offEvents() {
+        connection.off("data", onData);
+        connection.off("error", onError);
+        connection.off("close", onClose);
+        clearTimeout(timeout);
+      }
+
+      connection.on("data", onData);
+      connection.on("close", onClose);
+      connection.on("error", onClose);
+    });
   }
 
   @boundMethod
@@ -100,102 +216,6 @@ export abstract class Game {
     );
   }
 
-  protected async rpcCall<T extends GameDto>(
-    dto: GameDto,
-    connection: DataConnection,
-    timeoutMs = 5000
-  ): Promise<T> {
-    return new Promise<T>((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        connection.close();
-        reject(new Error(`Connection with ${connection.peer} timed out`));
-      }, timeoutMs);
-
-      function onClose() {
-        offEvents();
-        reject(new Error(`Connection with ${connection.peer} closed`));
-      }
-
-      function onError(error: any) {
-        offEvents();
-        reject(error);
-      }
-
-      function onData(data: unknown) {
-        if (!isGameDto(data)) {
-          return;
-        }
-
-        if (data.replyTo !== dto.id) {
-          return;
-        }
-
-        offEvents();
-        resolve(data as T);
-      }
-
-      function offEvents() {
-        connection.off("data", onData);
-        connection.off("error", onError);
-        connection.off("close", onClose);
-        clearTimeout(timeout);
-      }
-
-      connection.on("data", onData);
-      connection.on("close", onClose);
-      connection.on("error", onClose);
-
-      connection.send(dto);
-    });
-  }
-
-  protected async waitForMessageOfType<T extends GameDto>(
-    type: T["type"],
-    connection: DataConnection,
-    timeoutMs = 5000
-  ): Promise<T> {
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        connection.close();
-        reject(new Error(`Connection with ${connection.peer} timed out`));
-      }, timeoutMs);
-
-      function onClose() {
-        offEvents();
-        reject(new Error(`Connection with ${connection.peer} closed`));
-      }
-
-      function onError(error: any) {
-        offEvents();
-        reject(error);
-      }
-
-      function onData(data: unknown) {
-        if (!isGameDto(data)) {
-          return;
-        }
-
-        if (data.type !== type) {
-          return;
-        }
-
-        offEvents();
-        resolve(data as T);
-      }
-
-      function offEvents() {
-        connection.off("data", onData);
-        connection.off("error", onError);
-        connection.off("close", onClose);
-        clearTimeout(timeout);
-      }
-
-      connection.on("data", onData);
-      connection.on("close", onClose);
-      connection.on("error", onClose);
-    });
-  }
-
   @boundMethod
   private notifySubscriptions() {
     for (const subscription of this.updateSubscriptions) {
@@ -215,17 +235,17 @@ export class GameHost extends Game {
   protected onPeerConnection(connection: DataConnection) {
     super.onPeerConnection(connection);
 
-    this.waitForJoinRequest(connection);
+    this.joinFlow(connection);
   }
 
   @boundMethod
-  protected async waitForJoinRequest(connection: DataConnection) {
+  protected async joinFlow(connection: DataConnection) {
     try {
       this.log("Waiting for a Request to Join from", connection.peer);
 
       const requestToJoinDto = await this.waitForMessageOfType<
         RequestToJoinDto
-      >("request-to-join-dto", connection);
+      >("request-to-join-dto", connection, { closeOnTimeout: true });
 
       const { player } = requestToJoinDto.payload;
 
@@ -266,6 +286,15 @@ export class GameHost extends Game {
         })
       );
 
+      const newPlayer = new ServerPlayer({
+        uid: player.uid,
+        name: player.name,
+        game: this,
+        connection,
+      });
+
+      this.players.push(newPlayer);
+
       this.log(`Player ${player.name} (${player.uid}) joined the game!`);
     } catch (e) {
       this.error(e.message);
@@ -279,7 +308,7 @@ export interface GuestGameConstructorParams extends GameConstructorParams {
 
 export class GameGuest extends Game {
   type = "guest" as const;
-  host = null;
+  host: Host | null = null;
   player: Player;
 
   constructor({ player, hostUid }: GuestGameConstructorParams) {
@@ -323,6 +352,7 @@ export class GameGuest extends Game {
     });
   }
 
+  @boundMethod
   private async requestToJoinGame(connection: DataConnection) {
     try {
       const response = await this.rpcCall<RequestToJoinResponseDto>(
@@ -335,7 +365,10 @@ export class GameGuest extends Game {
             },
           },
         }),
-        connection
+        connection,
+        {
+          closeOnTimeout: true,
+        }
       );
 
       if (response.payload.type === "rejected") {
@@ -345,7 +378,12 @@ export class GameGuest extends Game {
 
       this.log(`Succesfully joined game`);
 
-      // TODO: set host connection
+      this.host = new Host({
+        uid: connection.peer,
+        name: "Host",
+        connection,
+        game: this,
+      });
     } catch (e) {
       this.error(e.message);
     }

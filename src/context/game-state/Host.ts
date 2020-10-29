@@ -1,45 +1,25 @@
 import { DataConnection } from "peerjs";
-import { Deck } from "./Deck";
 import { Game, RPCOptions } from "./Game";
 import { GameDto } from "./Game.dtos";
 
-export interface PlayerConstructorParams {
+export interface HostConstructorParams {
   uid: string;
   name: string;
+  connection: DataConnection;
   game: Game;
-  hand?: Deck | null;
 }
 
-export class Player {
+export class Host {
   uid: string;
   name: string;
+  connection: DataConnection;
   game: Game;
-  hand: Deck | null;
-  connection: DataConnection | null = null;
 
-  constructor({ uid, name, game, hand = null }: PlayerConstructorParams) {
+  constructor({ uid, name, connection, game }: HostConstructorParams) {
     this.uid = uid;
     this.name = name;
-    this.game = game;
-    this.hand = hand;
-  }
-
-  get isHost() {
-    return false;
-  }
-}
-
-export interface ServerPlayerConstructorParams extends PlayerConstructorParams {
-  connection: DataConnection;
-}
-
-export class ServerPlayer extends Player {
-  connection: DataConnection;
-
-  constructor({ connection, ...params }: ServerPlayerConstructorParams) {
-    super(params);
-
     this.connection = connection;
+    this.game = game;
   }
 
   public request<T extends GameDto>(
