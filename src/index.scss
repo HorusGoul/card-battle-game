@@ -11,3 +11,11 @@ body,
   background-color: var(--background);
   color: var(--text-color);
 }
+
+button {
+  transition: opacity 180ms ease-in;
+
+  &:hover:not(:disabled) {
+    opacity: 0.8;
+  }
+}
