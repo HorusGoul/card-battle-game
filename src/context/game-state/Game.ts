@@ -377,6 +377,8 @@ export class GameHost extends Game {
       })
     );
 
+    this.notifySubscriptions();
+
     return state;
   }
   private broadcast(dto: GameDto) {
