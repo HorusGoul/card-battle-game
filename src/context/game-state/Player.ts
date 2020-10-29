@@ -1,4 +1,4 @@
-import Peer, { DataConnection } from "peerjs";
+import { DataConnection } from "peerjs";
 import { Deck } from "./Deck";
 import { Game } from "./Game";
 
