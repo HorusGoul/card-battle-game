@@ -11,7 +11,7 @@ const GameContext = createContext<GameContextType>({
   game: {} as Game,
 });
 
-export function useGame() {
+export function useGame<T extends Game = GameGuest>() {
   const { game } = useContext(GameContext);
   const [state, setState] = useState<GameState>(game.state);
 
@@ -23,7 +23,7 @@ export function useGame() {
     return () => unsubscribe();
   }, [game]);
 
-  return { state, game };
+  return { state, game: game as T };
 }
 
 interface GameProviderBaseProps {
