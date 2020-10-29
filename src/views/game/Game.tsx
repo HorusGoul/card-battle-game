@@ -1,6 +1,6 @@
 import React from "react";
 import { useParams } from "react-router";
-import GameState, { useGameState } from "../../context/game-state/GameState";
+import { GameProvider, useGame } from "../../context/game-state";
 import { usePlayerSettings } from "../../context/player-settings";
 
 function Game() {
@@ -10,21 +10,21 @@ function Game() {
   const type = params.uid === settings.uid ? "host" : "guest";
 
   const guestJsx = (
-    <GameState
+    <GameProvider
       type="guest"
       player={{ name: settings.name, uid: settings.uid }}
       hostUid={params.uid}
     >
       Client: <OnlineStatus />
-    </GameState>
+      <CurrentState />
+    </GameProvider>
   );
 
   if (type === "host") {
     return (
-      <GameState type="host" hostUid={params.uid}>
-        Server: <OnlineStatus />
+      <GameProvider type="host" hostUid={params.uid}>
         {guestJsx}
-      </GameState>
+      </GameProvider>
     );
   }
 
@@ -34,7 +34,13 @@ function Game() {
 export default Game;
 
 function OnlineStatus() {
-  const { game } = useGameState();
+  const { game } = useGame();
 
   return <>{game.online ? "Online" : "Offline"}</>;
+}
+
+function CurrentState() {
+  const { state } = useGame();
+
+  return <pre>{JSON.stringify(state, null, 2)}</pre>;
 }

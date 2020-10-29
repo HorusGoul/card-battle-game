@@ -26,6 +26,10 @@ export class Deck {
   pickCard(): Card | null {
     return this.cards.shift() ?? null;
   }
+
+  get count(): number {
+    return this.cards.length;
+  }
 }
 
 export function createGameDeck(): Deck {

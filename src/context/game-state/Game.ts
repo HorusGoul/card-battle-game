@@ -10,10 +10,12 @@ import {
   RequestToJoinResponseDto,
 } from "./Game.dtos";
 import { Host } from "./Host";
+import { GameState, initialGameState, PlayerState } from "./State";
 
 const HOST_PREFIX = "host" as const;
 
 export interface RPCOptions {
+  waitForReply?: boolean;
   timeoutMs?: number;
   closeOnTimeout?: boolean;
 }
@@ -30,6 +32,7 @@ export abstract class Game {
   online = false;
   hostUid: Player["uid"];
   peer: Peer;
+  state: GameState = initialGameState;
 
   private updateSubscriptions: ((game: Game) => void)[] = [];
 
@@ -59,11 +62,15 @@ export abstract class Game {
   async rpcCall<T extends GameDto>(
     dto: GameDto,
     connection: DataConnection,
-    { timeoutMs = 5000, closeOnTimeout = false }: RPCOptions
+    {
+      waitForReply = true,
+      timeoutMs = 5000,
+      closeOnTimeout = false,
+    }: RPCOptions
   ): Promise<T> {
     return new Promise<T>((resolve, reject) => {
       const timeout = setTimeout(() => {
-        if (timeoutMs === 0) {
+        if (timeoutMs === 0 || !waitForReply) {
           return;
         }
 
@@ -104,9 +111,11 @@ export abstract class Game {
         clearTimeout(timeout);
       }
 
-      connection.on("data", onData);
-      connection.on("close", onClose);
-      connection.on("error", onClose);
+      if (waitForReply) {
+        connection.on("data", onData);
+        connection.on("close", onClose);
+        connection.on("error", onClose);
+      }
 
       connection.send(dto);
     });
@@ -217,7 +226,7 @@ export abstract class Game {
   }
 
   @boundMethod
-  private notifySubscriptions() {
+  protected notifySubscriptions() {
     for (const subscription of this.updateSubscriptions) {
       subscription(this);
     }
@@ -232,6 +241,13 @@ export class GameHost extends Game {
   }
 
   @boundMethod
+  protected onPeerOpen(id: string) {
+    super.onPeerOpen(id);
+
+    this.createNewState("waiting");
+  }
+
+  @boundMethod
   protected onPeerConnection(connection: DataConnection) {
     super.onPeerConnection(connection);
 
@@ -239,7 +255,7 @@ export class GameHost extends Game {
   }
 
   @boundMethod
-  protected async joinFlow(connection: DataConnection) {
+  private async joinFlow(connection: DataConnection) {
     try {
       this.log("Waiting for a Request to Join from", connection.peer);
 
@@ -275,17 +291,6 @@ export class GameHost extends Game {
         return;
       }
 
-      connection.send(
-        createDto({
-          replyTo: requestToJoinDto.id,
-          type: "request-to-join-response-dto",
-          payload: {
-            type: "accepted",
-            state: {},
-          },
-        })
-      );
-
       const newPlayer = new ServerPlayer({
         uid: player.uid,
         name: player.name,
@@ -295,9 +300,88 @@ export class GameHost extends Game {
 
       this.players.push(newPlayer);
 
+      connection.send(
+        createDto({
+          replyTo: requestToJoinDto.id,
+          type: "request-to-join-response-dto",
+          payload: {
+            type: "accepted",
+            state: this.createNewState("waiting"),
+            host: {
+              uid: this.hostUid,
+              name: "TBD",
+            },
+          },
+        })
+      );
+
       this.log(`Player ${player.name} (${player.uid}) joined the game!`);
     } catch (e) {
       this.error(e.message);
+    }
+  }
+
+  @boundMethod
+  private createNewState(status: GameState["status"]): GameState {
+    const players: PlayerState[] = this.players.map((player) => ({
+      uid: player.uid,
+      name: player.name,
+      cardsInDeck: player.hand?.count ?? 0,
+    }));
+
+    let state: GameState;
+
+    switch (status) {
+      case "connecting":
+        state = {
+          status,
+        };
+        break;
+      case "cannot-join":
+        state = {
+          status,
+          reason: "Unknown reason",
+        };
+        break;
+      case "waiting":
+        state = {
+          status,
+          players,
+        };
+        break;
+      case "playing":
+        state = {
+          status,
+          players,
+          currentTurn: "TBD",
+          canGrabCards: false,
+          cardsInPlay: [],
+        };
+        break;
+      case "finished":
+        state = {
+          status,
+          winner: players.find(
+            (player) => player.cardsInDeck === 52
+          ) as PlayerState,
+        };
+        break;
+    }
+
+    this.state = state;
+
+    this.broadcast(
+      createDto({
+        type: "sync-game-state",
+        payload: state,
+      })
+    );
+
+    return state;
+  }
+  private broadcast(dto: GameDto) {
+    for (const player of this.players) {
+      player.connection?.send(dto);
     }
   }
 }
@@ -325,24 +409,35 @@ export class GameGuest extends Game {
   }
 
   private async connectToHost() {
-    const connection = this.peer.connect(`${HOST_PREFIX}${this.hostUid}`, {
-      reliable: true,
-    });
+    try {
+      const connection = this.peer.connect(`${HOST_PREFIX}${this.hostUid}`, {
+        reliable: true,
+      });
 
-    await this.connectOrFail(connection)
-      .catch(() =>
-        this.error("Cannot connect to the Host with id", connection.peer)
-      )
-      .then(() => this.log("Connected to Host with id", connection.peer));
+      await this.connectOrFail(connection);
 
-    await this.requestToJoinGame(connection);
+      this.log("Connected to Host with id", connection.peer);
+
+      await this.requestToJoinGame(connection);
+
+      this.setupHostEvents();
+
+      this.log(`✅ Connection to Host (${connection.peer}) successful`);
+    } catch (e) {
+      this.setState({
+        status: "cannot-join",
+        reason: e.message,
+      });
+    }
   }
 
   private async connectOrFail(connection: DataConnection) {
     await new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         connection.close();
-        reject();
+        reject(
+          new Error(`Cannot connect to the Host with id ${connection.peer}`)
+        );
       }, 5000);
 
       connection.on("open", () => {
@@ -376,16 +471,78 @@ export class GameGuest extends Game {
         return;
       }
 
-      this.log(`Succesfully joined game`);
+      const { host, state } = response.payload;
+
+      this.log(`✅ Succesfully joined game`);
 
       this.host = new Host({
-        uid: connection.peer,
-        name: "Host",
+        uid: host.uid,
+        name: host.name,
         connection,
         game: this,
       });
+
+      this.setState(state);
     } catch (e) {
       this.error(e.message);
     }
+  }
+
+  @boundMethod
+  private setupHostEvents() {
+    if (!this.host) {
+      return;
+    }
+
+    this.host.connection.on("data", this.onHostData);
+    this.host.connection.on("error", this.onHostError);
+    this.host.connection.on("close", this.onHostClose);
+  }
+
+  @boundMethod
+  private onHostData(data: unknown) {
+    if (!this.host) {
+      return;
+    }
+
+    if (!isGameDto(data)) {
+      this.log("🔽", "Unknown received message");
+
+      return;
+    }
+
+    this.log("🔽", "Message received.", "Type:", data.type, "Content:", data);
+
+    switch (data.type) {
+      case "sync-game-state":
+        this.setState(data.payload);
+        return;
+    }
+  }
+
+  @boundMethod
+  private onHostError(error: unknown) {
+    if (!this.host) {
+      return;
+    }
+
+    this.error(
+      `An error happened in the connection between this client and the Host (${this.host.uid})`
+    );
+  }
+
+  @boundMethod
+  private onHostClose() {
+    if (!this.host) {
+      return;
+    }
+
+    this.error(`Connection with Host (${this.host.uid}) lost`);
+  }
+
+  private setState(newState: GameState) {
+    this.state = newState;
+
+    this.notifySubscriptions();
   }
 }
