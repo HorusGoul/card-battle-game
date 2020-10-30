@@ -11,6 +11,7 @@ import {
 } from "./Game.dtos";
 import { Host } from "./Host";
 import { GameState, initialGameState, PlayerState } from "./State";
+import { Card } from "./Card";
 
 const HOST_PREFIX = "host" as const;
 
@@ -236,9 +237,28 @@ export abstract class Game {
 export class GameHost extends Game {
   type = "host" as const;
   turnIndex = -1;
+  cardsInPlay: Card[] = [];
+  cardsToPlay = 1;
+  roundWinner: ServerPlayer | null = null;
+  lastRoundWinner: ServerPlayer | null = null;
 
   get turnPlayer() {
     return this.players[this.turnIndex] as ServerPlayer;
+  }
+
+  get canGrabCards() {
+    if (this.cardsInPlay.length < 2) {
+      return false;
+    }
+
+    const firstCard = this.cardsInPlay[0];
+    const secondCard = this.cardsInPlay[1];
+
+    if (firstCard.value === secondCard.value) {
+      return true;
+    }
+
+    return false;
   }
 
   constructor({ hostUid }: GameConstructorParams) {
@@ -380,8 +400,13 @@ export class GameHost extends Game {
           status,
           players,
           turnIndex: this.turnIndex,
-          canGrabCards: false,
-          cardsInPlay: [],
+          canGrabCards: this.canGrabCards,
+          cardsToPlay: this.cardsToPlay,
+          cardsInPlay: this.cardsInPlay,
+          lastRoundWinner:
+            players.find(
+              (player) => player.uid === this.lastRoundWinner?.uid
+            ) ?? null,
         };
         break;
       case "finished":
@@ -429,8 +454,6 @@ export class GameHost extends Game {
       this.turnIndex = (this.turnIndex + 1) % this.players.length;
     }
 
-    console.log(this.turnPlayer);
-
     // Setup current player events
     this.turnPlayer.connection?.on("data", this.onTurnPlayerData);
     this.turnPlayer.connection?.on("close", this.onTurnPlayerClose);
@@ -458,6 +481,12 @@ export class GameHost extends Game {
       return;
     }
 
+    switch (data.type) {
+      case "play-card":
+        this.playCard();
+        return;
+    }
+
     this.log("🔽", "Message received.", "Type:", data.type, "Content:", data);
   }
 
@@ -479,6 +508,58 @@ export class GameHost extends Game {
       error
     );
   }
+
+  @boundMethod
+  private playCard() {
+    const card = this.turnPlayer.hand?.pickCard();
+
+    if (!card) {
+      return;
+    }
+
+    this.cardsInPlay.unshift(card);
+
+    switch (card.type) {
+      case "jack":
+        this.cardsToPlay = 1;
+        this.roundWinner = this.turnPlayer;
+        this.nextTurn();
+        return;
+      case "queen":
+        this.cardsToPlay = 2;
+        this.roundWinner = this.turnPlayer;
+        this.nextTurn();
+        return;
+      case "king":
+        this.cardsToPlay = 3;
+        this.roundWinner = this.turnPlayer;
+        this.nextTurn();
+        return;
+      case "ace":
+        this.cardsToPlay = 4;
+        this.roundWinner = this.turnPlayer;
+        this.nextTurn();
+        return;
+      case "common":
+        this.cardsToPlay--;
+
+        if (this.cardsToPlay === 0 || this.turnPlayer.hand?.count === 0) {
+          if (this.roundWinner) {
+            this.roundWinner.hand?.addCardsToBottom(...this.cardsInPlay);
+            this.cardsInPlay = [];
+            this.lastRoundWinner = this.roundWinner;
+            this.roundWinner = null;
+          }
+
+          this.cardsToPlay = 1;
+          this.nextTurn();
+          return;
+        }
+
+        this.createNewState("playing");
+        return;
+    }
+  }
 }
 
 export interface GuestGameConstructorParams extends GameConstructorParams {
@@ -490,10 +571,41 @@ export class GameGuest extends Game {
   host: Host | null = null;
   player: Player;
 
+  get isMyTurn() {
+    if (this.state.status !== "playing") {
+      return false;
+    }
+
+    const playerIndex = this.state.players.findIndex(
+      (player) => player.uid === this.player.uid
+    );
+
+    return this.state.turnIndex === playerIndex;
+  }
+
   constructor({ player, hostUid }: GuestGameConstructorParams) {
     super({ hostUid, peerId: player.uid });
 
     this.player = new Player({ ...player, game: this });
+  }
+
+  @boundMethod
+  playCard() {
+    if (this.state.status !== "playing") {
+      return;
+    }
+
+    if (!this.isMyTurn) {
+      return;
+    }
+
+    const playCardDto = createDto({
+      type: "play-card",
+    });
+
+    this.log("Play card");
+
+    this.host?.request(playCardDto, { waitForReply: false });
   }
 
   @boundMethod

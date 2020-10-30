@@ -21,6 +21,8 @@ export interface PlayingGameState {
   turnIndex: number;
   canGrabCards: boolean;
   cardsInPlay: Card[];
+  cardsToPlay: number;
+  lastRoundWinner: PlayerState | null;
   players: PlayerState[];
 }
 

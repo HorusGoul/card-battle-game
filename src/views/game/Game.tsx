@@ -2,7 +2,7 @@ import React from "react";
 import { useParams } from "react-router";
 import LoadingScreen from "../../components/loading-screen";
 import { GameProvider, useGame } from "../../context/game-state";
-import { GameHost } from "../../context/game-state/Game";
+import { GameGuest, GameHost } from "../../context/game-state/Game";
 import { usePlayerSettings } from "../../context/player-settings";
 import HostControls from "../../components/host-controls";
 import styles from "./Game.module.scss";
@@ -69,7 +69,7 @@ function Host({ children }: HostProps) {
 }
 
 function Guest() {
-  const { state } = useGame<GameHost>();
+  const { state, game } = useGame<GameGuest>();
 
   if (state.status === "connecting") {
     return <LoadingScreen text="Attempting to join game..." />;
@@ -79,6 +79,10 @@ function Guest() {
     <>
       <OnlineStatus />
       <CurrentState />
+
+      {state.status === "playing" && (
+        <button onClick={game.playCard}>Play card</button>
+      )}
     </>
   );
 }

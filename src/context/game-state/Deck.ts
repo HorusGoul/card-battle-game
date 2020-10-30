@@ -32,15 +32,18 @@ export class Deck {
     return this.cards.shift() ?? null;
   }
 
+  addCardsToBottom(...cards: Card[]) {
+    this.cards.push(...cards);
+  }
+
   get count(): number {
     return this.cards.length;
   }
 }
 
 export function createGameDeck(): Deck {
-  const values = [
+  const types = [
     "ace",
-    "common",
     "common",
     "common",
     "common",
@@ -58,19 +61,19 @@ export function createGameDeck(): Deck {
   const variants = [
     {
       color: "#00ffae",
-      values,
+      types,
     },
     {
       color: "#ff8c00",
-      values,
+      types,
     },
     {
       color: "#ee00ff",
-      values,
+      types,
     },
     {
       color: "#ffffff",
-      values,
+      types,
     },
   ];
 
@@ -81,16 +84,16 @@ export function createGameDeck(): Deck {
 
 function createCards({
   color,
-  values,
+  types: values,
 }: {
   color: string;
-  values: readonly Card["value"][];
+  types: readonly Card["type"][];
 }) {
   return values.map(
-    (value, index): Card => {
+    (type, index): Card => {
       let displayText: string;
 
-      switch (value) {
+      switch (type) {
         case "common":
           displayText = index.toString();
           break;
@@ -110,8 +113,9 @@ function createCards({
 
       return {
         color,
-        value,
+        type,
         displayText,
+        value: index,
       };
     }
   );

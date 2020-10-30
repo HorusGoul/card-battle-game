@@ -1,5 +1,6 @@
 export interface Card {
-  value: "common" | "ace" | "jack" | "queen" | "king";
+  type: "common" | "ace" | "jack" | "queen" | "king";
+  value: number;
   displayText: string;
   color: string;
 }
