@@ -1,0 +1,34 @@
+.cooldownButton {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background-color: rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  z-index: 10;
+  transform: rotate(180deg);
+  animation-name: cooldown;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+  will-change: top;
+}
+
+@keyframes cooldown {
+  0% {
+    top: 0;
+  }
+
+  100% {
+    top: 100%;
+  }
+}

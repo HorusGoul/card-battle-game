@@ -7,6 +7,8 @@ import LastRoundWinner from "./last-round-winner";
 import GameCard from "../game-card";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
 import { useDebounce } from "use-debounce";
+import CooldownButton from "../cooldown-button";
+import { GiCardPlay } from "react-icons/gi";
 
 function PlayingScreen() {
   const { state, game } = useGame<GameGuest, PlayingGameState>();
@@ -16,6 +18,12 @@ function PlayingScreen() {
   const [cardsInPlay] = useDebounce(state.cardsInPlay, 500, {
     leading: state.cardsInPlay.length ? true : false,
   });
+
+  const playerIndex = state.players.findIndex(
+    (player) => player.uid === game.player.uid
+  );
+
+  const itsMyTurn = playerIndex === state.turnIndex;
 
   return (
     <div className={styles.playingScreen}>
@@ -55,8 +63,17 @@ function PlayingScreen() {
           ))}
       </TransitionGroup>
 
-      {/* TODO: throttle clicks */}
-      <button onClick={game.playCard}>Play card</button>
+      <div className={styles.bottom}>
+        <CooldownButton
+          onClick={game.playCard}
+          className={styles.playCardBtn}
+          disabled={!itsMyTurn}
+          cooldownMs={500}
+        >
+          <GiCardPlay aria-hidden="true" role="img" />
+          {itsMyTurn ? "Play Card" : "Waiting..."}
+        </CooldownButton>
+      </div>
     </div>
   );
 }

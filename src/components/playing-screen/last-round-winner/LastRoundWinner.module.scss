@@ -17,6 +17,8 @@
 
   animation: enter 300ms linear forwards, exit 300ms 5s linear forwards;
 
+  z-index: 10;
+
   [role="img"] {
     width: 24px;
     height: 24px;
