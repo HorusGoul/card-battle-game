@@ -9,13 +9,15 @@
 
   display: flex;
   justify-content: flex-end;
+
+  border-radius: var(--edges-radius) var(--edges-radius) 0 0;
 }
 
 .tag {
   position: absolute;
   top: 0;
   left: 32px;
-  padding: 4px;
+  padding: 0 4px 2px;
   background-color: var(--primary);
   border-radius: 0 0 4px 4px;
   text-transform: uppercase;
@@ -48,19 +50,6 @@
   }
 }
 
-.inviteUrlCopyBtn {
-  margin-right: 16px;
-  border-radius: 4px;
-  border: none;
-  font-size: 0.65rem;
-  background-color: var(--primary);
-  color: var(--primary-text);
-  font-weight: bold;
-  cursor: pointer;
-  text-transform: uppercase;
-  padding: 0 16px;
-}
-
 .status {
   display: flex;
   align-items: center;
@@ -70,14 +59,14 @@
   margin-right: auto;
 
   &.online .ball {
-    background-color: rgb(0, 255, 0);
+    background-color: var(--online);
   }
 
   .ball {
     width: 16px;
     height: 16px;
     border-radius: 8px;
-    background-color: rgb(246, 40, 40);
+    background-color: var(--offline);
     margin-right: 6px;
   }
 }

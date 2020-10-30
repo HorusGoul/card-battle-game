@@ -8,20 +8,6 @@ function HostControls() {
   const { state, game } = useGame<GameHost>();
 
   const canStartGame = state.status === "waiting" && state.players.length > 1;
-  const inviteUrl = window.location.href;
-
-  function copyInviteUrl() {
-    if ("share" in navigator) {
-      navigator.share({
-        url: inviteUrl,
-        title: `Join me in Card Battle Game!`,
-      });
-    } else {
-      // @ts-ignore
-      navigator.clipboard.writeText(inviteUrl);
-      alert("URL Copied!");
-    }
-  }
 
   if (
     state.status === "connecting" ||
@@ -44,10 +30,6 @@ function HostControls() {
         <div className={styles.ball} />
         {state.players.length}
       </div>
-
-      <button className={styles.inviteUrlCopyBtn} onClick={copyInviteUrl}>
-        Copy Invite URL
-      </button>
 
       <button
         className={styles.startGameBtn}

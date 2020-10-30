@@ -4,6 +4,15 @@
   --text-color: #333;
   --primary: rgb(0, 112, 218);
   --primary-text: #fff;
+  --edges-radius: ;
+  --online: rgb(52, 209, 118);
+  --offline: rgb(180, 55, 55);
+}
+
+@media screen and (min-width: 1024px) {
+  :root {
+    --edges-radius: 8px;
+  }
 }
 
 html,
@@ -12,6 +21,12 @@ body,
   height: 100%;
   background-color: var(--background);
   color: var(--text-color);
+}
+
+#root {
+  margin: 0 auto;
+  max-width: 1024px;
+  width: 100%;
 }
 
 button {
@@ -28,4 +43,10 @@ input,
 button,
 textarea {
   font-family: "Roboto", sans-serif;
+}
+
+*,
+*::after,
+*::before {
+  box-sizing: border-box;
 }

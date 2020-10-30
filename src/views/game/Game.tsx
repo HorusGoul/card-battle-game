@@ -6,6 +6,7 @@ import { GameGuest, GameHost } from "../../context/game-state/Game";
 import { usePlayerSettings } from "../../context/player-settings";
 import HostControls from "../../components/host-controls";
 import styles from "./Game.module.scss";
+import WaitingScreen from "../../components/waiting-screen";
 
 function Game() {
   const params = useParams<{ uid: string }>();
@@ -73,6 +74,10 @@ function Guest() {
 
   if (state.status === "connecting") {
     return <LoadingScreen text="Attempting to join game..." />;
+  }
+
+  if (state.status === "waiting") {
+    return <WaitingScreen />;
   }
 
   return (
