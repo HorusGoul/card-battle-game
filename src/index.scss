@@ -1,7 +1,9 @@
 :root {
-  --background: #111111;
-  --text-color: #ffffff;
-  --primary: rgb(0, 217, 255);
+  --background-lighter: #ffffff;
+  --background: #f0f0f0;
+  --text-color: #333;
+  --primary: rgb(0, 112, 218);
+  --primary-text: #fff;
 }
 
 html,
@@ -18,4 +20,12 @@ button {
   &:hover:not(:disabled) {
     opacity: 0.8;
   }
+}
+
+html,
+body,
+input,
+button,
+textarea {
+  font-family: "Roboto", sans-serif;
 }

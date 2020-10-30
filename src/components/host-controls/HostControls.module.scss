@@ -3,7 +3,8 @@
 
   border-top: 4px solid var(--primary);
   padding: 24px 32px 16px;
-  background-color: #222;
+  background-color: var(--background-lighter);
+  box-shadow: 0 -2px 6px 0 rgba(0, 0, 0, 0.22);
   height: 80px;
 
   display: flex;
@@ -19,7 +20,7 @@
   border-radius: 0 0 4px 4px;
   text-transform: uppercase;
   font-weight: bold;
-  color: #000;
+  color: var(--primary-text);
   font-size: 0.6em;
 }
 
@@ -30,12 +31,10 @@
   border: none;
   border-radius: 4px;
   background-color: rgb(46, 170, 94);
-  color: var(--text-color);
+  color: var(--primary-text);
   font-weight: bold;
   font-size: 1.5em;
-  font-family: monospace;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
   cursor: pointer;
 
   transition-duration: 180ms;
@@ -44,7 +43,7 @@
 
   &:disabled {
     opacity: 0.5;
-    background-color: #666;
+    background-color: rgba(0, 0, 0, 0.5);
     cursor: not-allowed;
   }
 }
@@ -55,7 +54,7 @@
   border: none;
   font-size: 0.65rem;
   background-color: var(--primary);
-  color: #000;
+  color: var(--primary-text);
   font-weight: bold;
   cursor: pointer;
   text-transform: uppercase;
