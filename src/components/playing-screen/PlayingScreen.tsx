@@ -1,12 +1,9 @@
 import React from "react";
-import {
-  PlayerState,
-  PlayingGameState,
-  useGame,
-} from "../../context/game-state";
+import { PlayingGameState, useGame } from "../../context/game-state";
 import { GameGuest } from "../../context/game-state/Game";
 import PlayerCard from "./player-card";
 import styles from "./PlayingScreen.module.scss";
+import LastRoundWinner from "./last-round-winner";
 
 function PlayingScreen() {
   const { state, game } = useGame<GameGuest, PlayingGameState>();
@@ -16,9 +13,7 @@ function PlayingScreen() {
   return (
     <div className={styles.playingScreen}>
       {state.lastRoundWinner && (
-        <div className={styles.lastRoundWinner}>
-          {state.lastRoundWinner.name}
-        </div>
+        <LastRoundWinner key={state.round} name={state.lastRoundWinner.name} />
       )}
 
       <div className={styles.players}>

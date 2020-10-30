@@ -24,6 +24,7 @@ export interface PlayingGameState {
   cardsToPlay: number;
   lastRoundWinner: PlayerState | null;
   players: PlayerState[];
+  round: number;
 }
 
 export interface FinishedGameState {

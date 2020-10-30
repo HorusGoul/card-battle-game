@@ -241,6 +241,7 @@ export class GameHost extends Game {
   cardsToPlay = 1;
   roundWinner: ServerPlayer | null = null;
   lastRoundWinner: ServerPlayer | null = null;
+  roundNumber = 0;
 
   get turnPlayer() {
     return this.players[this.turnIndex] as ServerPlayer;
@@ -407,6 +408,7 @@ export class GameHost extends Game {
             players.find(
               (player) => player.uid === this.lastRoundWinner?.uid
             ) ?? null,
+          round: this.roundNumber,
         };
         break;
       case "finished":
@@ -545,10 +547,12 @@ export class GameHost extends Game {
 
         if (this.cardsToPlay === 0 || this.turnPlayer.hand?.count === 0) {
           if (this.roundWinner) {
+            // End of round
             this.roundWinner.hand?.addCardsToBottom(...this.cardsInPlay);
             this.cardsInPlay = [];
             this.lastRoundWinner = this.roundWinner;
             this.roundWinner = null;
+            this.roundNumber++;
           }
 
           this.cardsToPlay = 1;

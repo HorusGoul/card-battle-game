@@ -1,0 +1,55 @@
+.lastRoundWinner {
+  position: absolute;
+  left: 16px;
+  top: 140px;
+  display: flex;
+  align-items: center;
+  height: 40px;
+  max-width: 240px;
+  padding: 16px 32px 16px 16px;
+
+  background-color: #000;
+  color: var(--winner);
+  border-radius: 8px;
+
+  opacity: 0;
+  transform: translateX(-100%);
+
+  animation: enter 300ms linear forwards, exit 300ms 5s linear forwards;
+
+  [role="img"] {
+    width: 24px;
+    height: 24px;
+    margin-right: 16px;
+  }
+
+  .name {
+    line-height: 18px;
+    font-size: 18px;
+    font-weight: bold;
+  }
+}
+
+@keyframes enter {
+  0% {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateX(0%);
+  }
+}
+
+@keyframes exit {
+  100% {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+
+  0% {
+    opacity: 1;
+    transform: translateX(0%);
+  }
+}
