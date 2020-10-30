@@ -7,6 +7,7 @@ import { usePlayerSettings } from "../../context/player-settings";
 import HostControls from "../../components/host-controls";
 import styles from "./Game.module.scss";
 import WaitingScreen from "../../components/waiting-screen";
+import CantJoinScreen from "../../components/cant-join-screen";
 
 function Game() {
   const params = useParams<{ uid: string }>();
@@ -78,6 +79,10 @@ function Guest() {
 
   if (state.status === "waiting") {
     return <WaitingScreen />;
+  }
+
+  if (state.status === "cannot-join") {
+    return <CantJoinScreen />;
   }
 
   return (

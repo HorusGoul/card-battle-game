@@ -29,7 +29,8 @@ body,
   width: 100%;
 }
 
-button {
+button,
+a {
   transition: opacity 180ms ease-in;
 
   &:hover:not(:disabled) {
