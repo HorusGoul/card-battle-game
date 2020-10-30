@@ -1,0 +1,118 @@
+.playerCard {
+  position: relative;
+  min-width: 180px;
+
+  border: 2px solid var(--background-darker);
+  background-color: var(--background-lighter);
+  border-radius: 8px;
+  padding: 12px 12px 8px;
+}
+
+.currentTurn {
+  &.playerCard {
+    border-color: var(--primary);
+  }
+
+  .turnOrder {
+    background-color: var(--primary);
+    color: var(--primary-text);
+  }
+
+  .meIndicator {
+    color: var(--primary);
+    opacity: 1;
+  }
+}
+
+.turnOrder {
+  position: absolute;
+  right: 0;
+  top: 0;
+  font-size: 0.8rem;
+  background-color: var(--background-darker);
+  font-weight: bold;
+  padding: 2px 2px 2px 4px;
+  border-radius: 0 4px 0 4px;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+}
+
+.status {
+  width: 12px;
+  height: 12px;
+  background-color: var(--offline);
+  border-radius: 6px;
+  margin-right: 8px;
+
+  &.online {
+    background-color: var(--online);
+  }
+}
+
+.name {
+  height: 1.1rem;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.bottom {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-top: 16px;
+}
+
+.cardCount {
+  display: flex;
+  align-items: center;
+
+  [role="img"] {
+    height: 22px;
+    width: auto;
+    margin-right: 4px;
+  }
+
+  .count {
+    height: 1rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+}
+
+.currentTurnIndicator {
+  position: absolute;
+  bottom: -1.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--primary);
+  color: var(--primary-text);
+  font-weight: bold;
+  text-transform: uppercase;
+  width: max-content;
+  padding: 2px 8px 4px;
+  height: 1.2rem;
+  font-size: 0.8rem;
+  border-radius: 0 0 4px 4px;
+}
+
+.meIndicator {
+  margin-right: auto;
+  display: flex;
+  align-items: center;
+  opacity: 0.6;
+
+  [role="img"] {
+    height: 12px;
+    width: auto;
+    margin-right: 4px;
+  }
+
+  .count {
+    height: 0.7rem;
+    font-size: 0.7rem;
+    font-weight: bold;
+  }
+}

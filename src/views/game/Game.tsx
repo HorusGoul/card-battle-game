@@ -8,6 +8,7 @@ import HostControls from "../../components/host-controls";
 import styles from "./Game.module.scss";
 import WaitingScreen from "../../components/waiting-screen";
 import CantJoinScreen from "../../components/cant-join-screen";
+import PlayingScreen from "../../components/playing-screen";
 
 function Game() {
   const params = useParams<{ uid: string }>();
@@ -38,18 +39,6 @@ function Game() {
 
 export default Game;
 
-function OnlineStatus() {
-  const { game } = useGame();
-
-  return <>{game.online ? "Online" : "Offline"}</>;
-}
-
-function CurrentState() {
-  const { state } = useGame();
-
-  return <pre>{JSON.stringify(state, null, 2)}</pre>;
-}
-
 interface HostProps {
   children: React.ReactNode;
 }
@@ -71,7 +60,7 @@ function Host({ children }: HostProps) {
 }
 
 function Guest() {
-  const { state, game } = useGame<GameGuest>();
+  const { state } = useGame<GameGuest>();
 
   if (state.status === "connecting") {
     return <LoadingScreen text="Attempting to join game..." />;
@@ -85,14 +74,9 @@ function Guest() {
     return <CantJoinScreen />;
   }
 
-  return (
-    <>
-      <OnlineStatus />
-      <CurrentState />
+  if (state.status === "playing") {
+    return <PlayingScreen />;
+  }
 
-      {state.status === "playing" && (
-        <button onClick={game.playCard}>Play card</button>
-      )}
-    </>
-  );
+  return <>Finished</>;
 }
