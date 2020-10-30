@@ -35,6 +35,7 @@ export interface ServerPlayerConstructorParams extends PlayerConstructorParams {
 
 export class ServerPlayer extends Player {
   connection: DataConnection;
+  online = false;
 
   constructor({ connection, ...params }: ServerPlayerConstructorParams) {
     super(params);

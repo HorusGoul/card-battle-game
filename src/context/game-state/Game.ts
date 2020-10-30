@@ -235,9 +235,30 @@ export abstract class Game {
 
 export class GameHost extends Game {
   type = "host" as const;
+  turnIndex = -1;
+
+  get turnPlayer() {
+    return this.players[this.turnIndex] as ServerPlayer;
+  }
 
   constructor({ hostUid }: GameConstructorParams) {
     super({ hostUid, peerId: `${HOST_PREFIX}${hostUid}` });
+  }
+
+  @boundMethod
+  startGame() {
+    // TODO: maybe we should add a intermediate state
+    // to make a shuffle and card distribution animation
+
+    this.deck = createGameDeck().shuffle();
+
+    const initialHands = this.deck.split(this.players.length);
+
+    for (const player of this.players) {
+      player.hand = initialHands.shift() ?? null;
+    }
+
+    this.nextTurn();
   }
 
   @boundMethod
@@ -298,6 +319,8 @@ export class GameHost extends Game {
         connection,
       });
 
+      newPlayer.online = true;
+
       this.players.push(newPlayer);
 
       connection.send(
@@ -323,11 +346,14 @@ export class GameHost extends Game {
 
   @boundMethod
   private createNewState(status: GameState["status"]): GameState {
-    const players: PlayerState[] = this.players.map((player) => ({
-      uid: player.uid,
-      name: player.name,
-      cardsInDeck: player.hand?.count ?? 0,
-    }));
+    const players: PlayerState[] = (this.players as ServerPlayer[]).map(
+      (player) => ({
+        uid: player.uid,
+        name: player.name,
+        cardsInDeck: player.hand?.count ?? 0,
+        online: player.online,
+      })
+    );
 
     let state: GameState;
 
@@ -353,7 +379,7 @@ export class GameHost extends Game {
         state = {
           status,
           players,
-          currentTurn: "TBD",
+          turnIndex: this.turnIndex,
           canGrabCards: false,
           cardsInPlay: [],
         };
@@ -381,10 +407,77 @@ export class GameHost extends Game {
 
     return state;
   }
+
+  @boundMethod
   private broadcast(dto: GameDto) {
     for (const player of this.players) {
       player.connection?.send(dto);
     }
+  }
+
+  @boundMethod
+  private nextTurn() {
+    if (this.turnIndex === -1) {
+      this.turnIndex = Math.floor(Math.random() * this.players.length);
+    } else {
+      // Cleanup events from previous turn
+      this.turnPlayer.connection?.off("data", this.onTurnPlayerData);
+      this.turnPlayer.connection?.off("close", this.onTurnPlayerClose);
+      this.turnPlayer.connection?.off("error", this.onTurnPlayerError);
+
+      // Move to the next turn
+      this.turnIndex = (this.turnIndex + 1) % this.players.length;
+    }
+
+    console.log(this.turnPlayer);
+
+    // Setup current player events
+    this.turnPlayer.connection?.on("data", this.onTurnPlayerData);
+    this.turnPlayer.connection?.on("close", this.onTurnPlayerClose);
+    this.turnPlayer.connection?.on("error", this.onTurnPlayerError);
+
+    if (!this.turnPlayer.online) {
+      // TODO: In case of disconnection, we should automate the
+      // gameplay with some exceptions like the bot player
+      // not being able to grab the cards.
+
+      // Skip turn if the player is offline
+      this.nextTurn();
+
+      return;
+    }
+
+    this.createNewState("playing");
+  }
+
+  @boundMethod
+  private onTurnPlayerData(data: unknown) {
+    if (!isGameDto(data)) {
+      this.log("🔽", "Unknown received message");
+
+      return;
+    }
+
+    this.log("🔽", "Message received.", "Type:", data.type, "Content:", data);
+  }
+
+  @boundMethod
+  private onTurnPlayerClose() {
+    this.turnPlayer.online = false;
+
+    this.error(
+      `Connection with Player ${this.turnPlayer.name} (${this.turnPlayer.uid}) lost`
+    );
+
+    this.nextTurn();
+  }
+
+  @boundMethod
+  private onTurnPlayerError(error: unknown) {
+    this.error(
+      `An error happened in the connection with the Player ${this.turnPlayer.name} (${this.turnPlayer.uid})`,
+      error
+    );
   }
 }
 

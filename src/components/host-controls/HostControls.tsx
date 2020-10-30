@@ -49,7 +49,11 @@ function HostControls() {
         Copy Invite URL
       </button>
 
-      <button className={styles.startGameBtn} disabled={!canStartGame}>
+      <button
+        className={styles.startGameBtn}
+        disabled={!canStartGame}
+        onClick={game.startGame}
+      >
         {canStartGame ? "Start" : "Waiting"}
       </button>
     </div>

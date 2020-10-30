@@ -14,13 +14,18 @@ export class Deck {
     return this;
   }
 
-  split(): [Deck, Deck] {
-    const halfPoint = this.cards.length / 2;
+  split(parts = 2): Deck[] {
+    const newDecksCards: Card[][] = new Array(parts).fill(null).map(() => []);
 
-    const firstHalf = this.cards.splice(0, halfPoint);
-    const secondHalf = this.cards.splice(0, halfPoint);
+    // Distribute cards between all the card arrays
+    for (let i = 0; i < this.cards.length; i++) {
+      const card = this.cards[i];
 
-    return [new Deck(firstHalf), new Deck(secondHalf)];
+      const deckCardsIndex = i % parts;
+      newDecksCards[deckCardsIndex].push(card);
+    }
+
+    return newDecksCards.map((deckCards) => new Deck(deckCards));
   }
 
   pickCard(): Card | null {

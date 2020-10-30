@@ -4,6 +4,7 @@ export interface PlayerState {
   uid: string;
   name: string;
   cardsInDeck: number;
+  online: boolean;
 }
 
 export interface ConnectingGameState {
@@ -17,7 +18,7 @@ export interface WaitingGameState {
 
 export interface PlayingGameState {
   status: "playing";
-  currentTurn: string;
+  turnIndex: number;
   canGrabCards: boolean;
   cardsInPlay: Card[];
   players: PlayerState[];
