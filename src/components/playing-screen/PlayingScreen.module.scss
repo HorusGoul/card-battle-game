@@ -1,5 +1,8 @@
 .playingScreen {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .players {
@@ -15,5 +18,72 @@
     content: "";
     display: block;
     min-width: 16px;
+  }
+}
+
+.cardsInPlay {
+  position: relative;
+  padding: 16px;
+  flex: 1;
+  height: 100%;
+
+  .cardContainer {
+    position: absolute;
+    top: 50%;
+    left: calc(50%);
+    transform: translate(-50%, -50%);
+    opacity: 1;
+
+    &:not(:last-child) {
+      animation: moveCardToDeck 500ms ease-in-out forwards;
+
+      &.exit {
+        animation: exitCard 800ms 200ms ease-in-out forwards;
+      }
+    }
+
+    &:last-child {
+      animation: enterCard 500ms ease-in-out forwards;
+
+      &.exit {
+        animation: moveCardToDeck 200ms ease-in-out forwards,
+          exitCard 800ms 200ms ease-in-out forwards;
+      }
+    }
+  }
+}
+
+@keyframes enterCard {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translate(48px, -100%) rotate(45deg);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) translate(48px, -24px) rotate(10deg);
+  }
+}
+
+@keyframes moveCardToDeck {
+  0% {
+    transform: translate(-50%, -50%) translate(48px, -24px) rotate(10deg);
+  }
+
+  100% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+}
+
+@keyframes exitCard {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+
+  100% {
+    opacity: 0;
+    top: -25%;
+    transform: translate(-50%, -50%) rotate(180deg);
   }
 }

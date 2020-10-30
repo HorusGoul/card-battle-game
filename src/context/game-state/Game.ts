@@ -512,7 +512,7 @@ export class GameHost extends Game {
   }
 
   @boundMethod
-  private playCard() {
+  private async playCard() {
     const card = this.turnPlayer.hand?.pickCard();
 
     if (!card) {
@@ -545,6 +545,8 @@ export class GameHost extends Game {
       case "common":
         this.cardsToPlay--;
 
+        this.createNewState("playing");
+
         if (this.cardsToPlay === 0 || this.turnPlayer.hand?.count === 0) {
           if (this.roundWinner) {
             // End of round
@@ -560,7 +562,6 @@ export class GameHost extends Game {
           return;
         }
 
-        this.createNewState("playing");
         return;
     }
   }

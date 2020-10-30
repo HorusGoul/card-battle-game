@@ -60,19 +60,19 @@ export function createGameDeck(): Deck {
 
   const variants = [
     {
-      color: "#00ffae",
+      color: "#1c8ec0",
       types,
     },
     {
-      color: "#ff8c00",
+      color: "#d92d38",
       types,
     },
     {
-      color: "#ee00ff",
+      color: "#40be65",
       types,
     },
     {
-      color: "#ffffff",
+      color: "#000000",
       types,
     },
   ];
