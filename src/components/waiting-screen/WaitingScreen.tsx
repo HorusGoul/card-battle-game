@@ -41,7 +41,7 @@ function WaitingScreen() {
 
         <ul className={styles.playerContainer}>
           {state.players.map((player) => (
-            <li className={styles.playerItem}>
+            <li key={player.uid} className={styles.playerItem}>
               <div
                 className={classNames(styles.status, {
                   [styles.online]: player.online,
