@@ -32,6 +32,7 @@ export interface GameConstructorParams {
 }
 
 export const MAX_PLAYERS = 12;
+export const RPC_DEFAULT_TIMEOUT_MS = 10000;
 
 export abstract class Game {
   abstract type: "host" | "guest";
@@ -73,7 +74,7 @@ export abstract class Game {
     connection: DataConnection,
     {
       waitForReply = true,
-      timeoutMs = 5000,
+      timeoutMs = RPC_DEFAULT_TIMEOUT_MS,
       closeOnTimeout = false,
     }: RPCOptions
   ): Promise<T> {
@@ -133,7 +134,7 @@ export abstract class Game {
   async waitForMessageOfType<T extends GameDto>(
     type: T["type"],
     connection: DataConnection,
-    { timeoutMs = 5000, closeOnTimeout = false }: RPCOptions
+    { timeoutMs = RPC_DEFAULT_TIMEOUT_MS, closeOnTimeout = false }: RPCOptions
   ): Promise<T> {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
@@ -821,12 +822,22 @@ export class GameGuest extends Game {
 
   private async connectOrFail(connection: DataConnection) {
     await new Promise((resolve, reject) => {
+      if (connection.open) {
+        resolve();
+        return;
+      }
+
       const timeout = setTimeout(() => {
+        if (connection.open) {
+          resolve();
+          return;
+        }
+
         connection.close();
         reject(
           new Error(`Cannot connect to the Host with id ${connection.peer}`)
         );
-      }, 5000);
+      }, RPC_DEFAULT_TIMEOUT_MS);
 
       connection.on("open", () => {
         clearTimeout(timeout);
