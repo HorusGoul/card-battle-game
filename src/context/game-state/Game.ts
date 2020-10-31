@@ -31,7 +31,7 @@ export interface GameConstructorParams {
   peerId?: string;
 }
 
-export const MAX_PLAYERS = 12;
+export const MAX_PLAYERS = 6;
 export const RPC_DEFAULT_TIMEOUT_MS = 10000;
 
 export abstract class Game {
