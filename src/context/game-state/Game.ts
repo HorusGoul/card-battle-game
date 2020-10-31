@@ -31,10 +31,11 @@ export interface GameConstructorParams {
   peerId?: string;
 }
 
+export const MAX_PLAYERS = 12;
+
 export abstract class Game {
   abstract type: "host" | "guest";
   deck: Deck = createGameDeck();
-  players: Player[] = [];
   online = false;
   hostUid: Player["uid"];
   peer: Peer;
@@ -45,6 +46,7 @@ export abstract class Game {
   constructor({ hostUid, peerId = hostUid }: GameConstructorParams) {
     this.hostUid = hostUid;
 
+    // TODO: Specify TURN servers
     this.peer = new Peer(peerId, {
       host: "card-battle-game-peerjs-server.herokuapp.com",
       port: 443,
@@ -254,6 +256,7 @@ export class GameHost extends Game {
   lastRoundWinnerReason: PlayingGameState["lastRoundWinnerReason"] = null;
   roundNumber = 0;
   maxCards = 0;
+  players: ServerPlayer[] = [];
 
   get turnPlayer() {
     return this.players[this.turnIndex] as ServerPlayer;
@@ -310,6 +313,19 @@ export class GameHost extends Game {
   }
 
   @boundMethod
+  onPlayerClose(player: ServerPlayer) {
+    switch (this.state.status) {
+      case "waiting":
+      case "finished":
+        this.players = this.players.filter((current) => current !== player);
+        break;
+    }
+
+    player.cleanup();
+    this.createNewState(this.state.status);
+  }
+
+  @boundMethod
   protected onPeerOpen(id: string) {
     super.onPeerOpen(id);
 
@@ -334,14 +350,33 @@ export class GameHost extends Game {
 
       const { player } = requestToJoinDto.payload;
 
-      const alreadyInRoom = this.players.find(
-        (playerItem) =>
-          playerItem.uid === player.uid || playerItem.name === player.name
+      const playerAlreadyInRoom = this.players.find(
+        (playerItem) => playerItem.uid === player.uid
       );
 
-      if (alreadyInRoom) {
-        const reason = `A player with the same name or UID exists in the room.`;
+      if (playerAlreadyInRoom) {
+        playerAlreadyInRoom.online = true;
+        playerAlreadyInRoom.setup();
 
+        connection.send(
+          createDto({
+            replyTo: requestToJoinDto.id,
+            type: "request-to-join-response-dto",
+            payload: {
+              type: "accepted",
+              state: this.createNewState(this.state.status),
+              host: {
+                uid: this.hostUid,
+                name: "TBD",
+              },
+            },
+          })
+        );
+
+        return;
+      }
+
+      const rejectJoin = (reason: string) => {
         connection.send(
           createDto({
             replyTo: requestToJoinDto.id,
@@ -356,8 +391,31 @@ export class GameHost extends Game {
         this.log(
           `Request to Join rejected to ${player.uid}. Reason: ${reason}`
         );
+      };
 
+      if (this.state.status !== "waiting") {
+        rejectJoin("On going game, try again later please");
         return;
+      }
+
+      if (this.players.length >= MAX_PLAYERS) {
+        rejectJoin(`Game is full. ${MAX_PLAYERS} players max.`);
+        return;
+      }
+
+      const playersWithTheSameName = this.players.reduce(
+        (count, playerItem) => {
+          if (playerItem.name.toLowerCase() === player.name.toLowerCase()) {
+            return count + 1;
+          }
+
+          return count;
+        },
+        0
+      );
+
+      if (playersWithTheSameName) {
+        player.name = `${player.name} (${playersWithTheSameName})`;
       }
 
       const newPlayer = new ServerPlayer({
@@ -466,7 +524,7 @@ export class GameHost extends Game {
 
   @boundMethod
   private broadcast(dto: GameDto) {
-    for (const player of this.players) {
+    for (const player of this.players.filter((player) => player.online)) {
       player.connection?.send(dto);
     }
   }
@@ -497,15 +555,8 @@ export class GameHost extends Game {
     this.turnPlayer.connection?.on("error", this.onTurnPlayerError);
 
     if (!this.turnPlayer.online) {
-      if (this.turnPlayer.hand?.count !== 0) {
-        // Play card in behalf of the player if it's offline
-        this.playCard();
-        return;
-      }
-
-      // Skip turn if the player is offline and doesn't have
-      // cards.
-      this.nextTurn();
+      // Play the turn in behalf of the player if it's offline
+      this.playTurnInBehalfOfPlayer();
       return;
     }
 
@@ -547,12 +598,7 @@ export class GameHost extends Game {
       `Connection with Player ${this.turnPlayer.name} (${this.turnPlayer.uid}) lost`
     );
 
-    if (this.cardsToPlay) {
-      // Play a card if the player disconnects while playing
-      this.playCard();
-    } else {
-      this.nextTurn();
-    }
+    this.playTurnInBehalfOfPlayer();
   }
 
   @boundMethod
@@ -646,6 +692,39 @@ export class GameHost extends Game {
     this.lastRoundWinnerReason = null;
     this.roundNumber = 0;
     this.maxCards = 0;
+  }
+
+  @boundMethod
+  private async playTurnInBehalfOfPlayer() {
+    this.createNewState("playing");
+
+    const player = this.turnPlayer;
+    const cardsToPlay = this.cardsToPlay;
+
+    await sleep(200);
+
+    if (player !== this.turnPlayer) {
+      return;
+    }
+
+    if (player.hand?.count !== 0) {
+      // Play cards in behalf of the player if it's offline
+      for (let i = 0; i < cardsToPlay; i++) {
+        await sleep(1000);
+
+        if (player !== this.turnPlayer) {
+          break;
+        }
+
+        this.playCard();
+      }
+
+      return;
+    }
+
+    // Skip turn if the player is offline and doesn't have
+    // cards.
+    this.nextTurn();
   }
 }
 
@@ -776,6 +855,11 @@ export class GameGuest extends Game {
       );
 
       if (response.payload.type === "rejected") {
+        this.setState({
+          status: "cannot-join",
+          reason: response.payload.reason,
+        });
+
         connection.close();
         return;
       }
@@ -854,4 +938,8 @@ export class GameGuest extends Game {
 
     this.notifySubscriptions();
   }
+}
+
+async function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

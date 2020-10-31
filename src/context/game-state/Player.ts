@@ -105,6 +105,8 @@ export class ServerPlayer extends Player {
     this.online = false;
 
     this.game.error(`Connection with Player ${this.name} (${this.uid}) lost`);
+
+    this.game.onPlayerClose(this);
   }
 
   @boundMethod
