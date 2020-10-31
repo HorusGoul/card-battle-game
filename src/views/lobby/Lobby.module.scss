@@ -1,0 +1,194 @@
+.lobby {
+  min-height: 100%;
+  width: 100%;
+  background-color: var(--background);
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  padding: 32px 16px;
+}
+
+.description {
+  color: var(--text-color);
+  font-size: 1.25rem;
+  font-weight: 400;
+  text-align: left;
+  margin-bottom: 16px;
+  width: 288px;
+}
+
+.title {
+  color: var(--text-color);
+  font-size: 1.8rem;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 288px;
+
+  [role="img"] {
+    margin: 0 16px;
+    color: var(--primary);
+  }
+}
+
+.subtitle {
+  color: var(--primary);
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-align: left;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  width: 288px;
+}
+
+.input {
+  width: 288px;
+  border: none;
+  padding: 16px;
+  font-size: 1.25rem;
+  box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.22);
+  border-radius: 4px;
+  text-align: center;
+}
+
+.uid {
+  width: 288px;
+  margin-top: 8px;
+  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.resetUidBtn {
+  border: none;
+  padding: 4px 8px;
+  background-color: var(--primary);
+  color: var(--primary-text);
+  border-radius: 4px;
+  margin-left: auto;
+}
+
+button.createGameBtn,
+button.joinGameBtn {
+  background-color: var(--primary);
+  color: var(--primary-text);
+  padding: 16px 24px;
+  height: 40px;
+  border-radius: 8px;
+  font-size: 1.25rem;
+  text-transform: uppercase;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 288px;
+
+  &:disabled {
+    background-color: rgba(0, 0, 0, 0.2);
+    cursor: not-allowed;
+  }
+
+  [role="img"] {
+    margin-right: 16px;
+  }
+}
+
+.joinTitle {
+  padding: 8px 0;
+  align-self: left;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.playContainer {
+  width: 288px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.modeDescription {
+  color: var(--text-color);
+  font-size: 0.8rem;
+  font-weight: 400;
+  margin-top: 8px;
+  line-height: 1.2rem;
+  opacity: 0.8;
+  margin-bottom: 16px;
+}
+
+.joinForm {
+  display: flex;
+  align-items: center;
+
+  .input {
+    width: 100%;
+    flex: 1;
+    margin-right: 8px;
+  }
+
+  .joinGameBtn {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: 20px;
+
+    [role="img"] {
+      margin-right: 0;
+      margin-left: 2px;
+    }
+  }
+}
+
+.sectionDescription {
+  color: var(--text-color);
+  font-size: 0.8rem;
+  font-weight: 400;
+  line-height: 1.2rem;
+  opacity: 0.8;
+  margin-bottom: 8px;
+  width: 288px;
+}
+
+.footer {
+  width: 288px;
+  font-size: 1.1rem;
+  line-height: 1.5rem;
+  margin-top: 16px;
+
+  a {
+    color: var(--text-color);
+    text-decoration: none;
+  }
+}
+
+.madeWithLove {
+  display: inline-flex;
+  font-weight: 500;
+
+  [role="img"] {
+    display: inline;
+    width: 1.5rem;
+    height: 1.5rem;
+    color: #e53e3e;
+  }
+}
+
+.sourceCode {
+  font-weight: 300;
+
+  [role="img"] {
+    width: 1rem;
+    height: 1rem;
+    margin: 0 0 2px 2px;
+  }
+
+  strong {
+    font-weight: 500;
+  }
+}

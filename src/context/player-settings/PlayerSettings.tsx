@@ -9,6 +9,7 @@ export interface PlayerSettings {
 interface PlayerSettingsContextType {
   settings: PlayerSettings;
   updateSettings: (partial: Partial<Omit<PlayerSettings, "uid">>) => void;
+  resetUid: () => void;
 }
 
 const PlayerSettingsContext = createContext<PlayerSettingsContextType>({
@@ -17,6 +18,7 @@ const PlayerSettingsContext = createContext<PlayerSettingsContextType>({
     name: "Player",
   },
   updateSettings: () => null,
+  resetUid: () => null,
 });
 
 export function usePlayerSettings() {
@@ -27,15 +29,21 @@ interface PlayerSettingsProviderProps {
   children: React.ReactNode;
 }
 
+const UID_LENGTH = 10;
+
+function createUid() {
+  return uid(UID_LENGTH).replaceAll("O", "0").toUpperCase();
+}
+
 export function PlayerSettingsProvider({
   children,
 }: PlayerSettingsProviderProps) {
   // TODO: persist settings
   const [settings, setSettings] = useState<PlayerSettings>(() => {
-    const playerUid = uid(4);
+    const playerUid = createUid();
 
     return {
-      name: `Player${playerUid}`,
+      name: `Player${playerUid.slice(0, 4)}`,
       uid: playerUid,
     };
   });
@@ -47,8 +55,14 @@ export function PlayerSettingsProvider({
     []
   );
 
+  const resetUid = useCallback(() => {
+    setSettings((current) => ({ ...current, uid: createUid() }));
+  }, []);
+
   return (
-    <PlayerSettingsContext.Provider value={{ settings, updateSettings }}>
+    <PlayerSettingsContext.Provider
+      value={{ settings, updateSettings, resetUid }}
+    >
       {children}
     </PlayerSettingsContext.Provider>
   );

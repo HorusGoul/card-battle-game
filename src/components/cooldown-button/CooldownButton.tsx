@@ -7,6 +7,7 @@ export interface CooldownButtonProps {
   onClick?: () => void;
   cooldownMs?: number;
   disabled?: boolean;
+  type?: "submit" | "button";
   children: React.ReactNode;
 }
 
@@ -16,6 +17,8 @@ function CooldownButton({
   cooldownMs = 1000,
   onClick,
   disabled,
+  type = "button",
+  ...props
 }: CooldownButtonProps) {
   const [throttled, setThrottled] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -45,9 +48,11 @@ function CooldownButton({
 
   return (
     <button
+      type={type}
       className={classNames(styles.cooldownButton, className)}
       onClick={internalOnClick}
       disabled={throttled || disabled}
+      {...props}
     >
       {children}
 
