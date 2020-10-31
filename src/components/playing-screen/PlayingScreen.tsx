@@ -68,7 +68,11 @@ function PlayingScreen() {
           ))}
       </TransitionGroup>
 
-      <CooldownButton className={styles.pairBtn} onClick={game.grabCards}>
+      <CooldownButton
+        className={styles.pairBtn}
+        onClick={game.grabCards}
+        cooldownMs={5000}
+      >
         <HiSpeakerphone aria-hidden="true" role="img" />
 
         <span className={styles.text}>Pair</span>
