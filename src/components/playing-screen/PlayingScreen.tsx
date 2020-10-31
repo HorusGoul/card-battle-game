@@ -68,17 +68,17 @@ function PlayingScreen() {
           ))}
       </TransitionGroup>
 
-      <CooldownButton
-        className={styles.pairBtn}
-        onClick={game.grabCards}
-        cooldownMs={5000}
-      >
-        <HiSpeakerphone aria-hidden="true" role="img" />
-
-        <span className={styles.text}>Pair</span>
-      </CooldownButton>
-
       <div className={styles.bottom}>
+        <CooldownButton
+          className={styles.pairBtn}
+          onClick={game.grabCards}
+          cooldownMs={5000}
+        >
+          <HiSpeakerphone aria-hidden="true" role="img" />
+
+          <span className={styles.text}>Pair</span>
+        </CooldownButton>
+
         <CooldownButton
           onClick={game.playCard}
           className={styles.playCardBtn}

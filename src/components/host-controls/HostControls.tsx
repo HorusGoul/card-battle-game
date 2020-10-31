@@ -12,7 +12,8 @@ function HostControls() {
   if (
     state.status === "connecting" ||
     state.status === "cannot-join" ||
-    state.status === "finished"
+    state.status === "finished" ||
+    state.status === "playing"
   ) {
     return null;
   }
