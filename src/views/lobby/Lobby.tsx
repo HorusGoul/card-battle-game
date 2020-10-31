@@ -110,7 +110,7 @@ function Lobby() {
         <span className={styles.madeWithLove}>
           Made with&nbsp;
           <MdFavorite role="img" aria-label="love" />
-          &nbsp;by&nbsp;<a href="https://horus.dev">horus.dev</a>&nbsp;—&nbsp;
+          &nbsp;by&nbsp;<a href="https://horus.dev">horus.dev</a>
         </span>
         <span className={styles.sourceCode}>
           Source code available on{" "}
