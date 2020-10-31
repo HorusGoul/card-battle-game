@@ -47,7 +47,8 @@ export abstract class Game {
 
     this.peer = new Peer(peerId, {
       host: "card-battle-game-peerjs-server.herokuapp.com",
-      port: 80,
+      port: 443,
+      secure: true,
     });
 
     this.setup();
