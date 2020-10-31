@@ -8,11 +8,11 @@ function HostControls() {
   const { state, game } = useGame<GameHost>();
 
   const canStartGame = state.status === "waiting" && state.players.length > 1;
+  const canResetGame = state.status === "finished";
 
   if (
     state.status === "connecting" ||
     state.status === "cannot-join" ||
-    state.status === "finished" ||
     state.status === "playing"
   ) {
     return null;
@@ -32,13 +32,21 @@ function HostControls() {
         {state.players.length}
       </div>
 
-      <button
-        className={styles.startGameBtn}
-        disabled={!canStartGame}
-        onClick={game.startGame}
-      >
-        {canStartGame ? "Start" : "Waiting"}
-      </button>
+      {canResetGame && (
+        <button className={styles.startGameBtn} onClick={game.startWaiting}>
+          Reset
+        </button>
+      )}
+
+      {!canResetGame && (
+        <button
+          className={styles.startGameBtn}
+          disabled={!canStartGame}
+          onClick={game.startGame}
+        >
+          {canStartGame ? "Start" : "Waiting"}
+        </button>
+      )}
     </div>
   );
 }

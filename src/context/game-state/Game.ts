@@ -249,6 +249,7 @@ export class GameHost extends Game {
   lastRoundWinner: ServerPlayer | null = null;
   lastRoundWinnerReason: PlayingGameState["lastRoundWinnerReason"] = null;
   roundNumber = 0;
+  maxCards = 0;
 
   get turnPlayer() {
     return this.players[this.turnIndex] as ServerPlayer;
@@ -279,6 +280,7 @@ export class GameHost extends Game {
     // to make a shuffle and card distribution animation
 
     this.deck = createGameDeck().shuffle();
+    this.maxCards = this.deck.count;
 
     const initialHands = this.deck.split(this.players.length);
 
@@ -287,6 +289,11 @@ export class GameHost extends Game {
     }
 
     this.nextTurn();
+  }
+
+  @boundMethod
+  startWaiting() {
+    this.createNewState("waiting");
   }
 
   @boundMethod
@@ -302,7 +309,7 @@ export class GameHost extends Game {
   protected onPeerOpen(id: string) {
     super.onPeerOpen(id);
 
-    this.createNewState("waiting");
+    this.startWaiting();
   }
 
   @boundMethod
@@ -431,8 +438,9 @@ export class GameHost extends Game {
       case "finished":
         state = {
           status,
+          players,
           winner: players.find(
-            (player) => player.cardsInDeck === 52
+            (player) => player.cardsInDeck === this.maxCards
           ) as PlayerState,
         };
         break;
@@ -473,17 +481,35 @@ export class GameHost extends Game {
       this.turnIndex = (this.turnIndex + 1) % this.players.length;
     }
 
+    if (this.lastRoundWinner?.hand?.count === this.maxCards) {
+      this.finish();
+
+      return;
+    }
+
     // Setup current player events
     this.turnPlayer.connection?.on("data", this.onTurnPlayerData);
     this.turnPlayer.connection?.on("close", this.onTurnPlayerClose);
     this.turnPlayer.connection?.on("error", this.onTurnPlayerError);
 
     if (!this.turnPlayer.online) {
-      // TODO: In case of disconnection, we should automate the
-      // gameplay with some exceptions like the bot player
-      // not being able to grab the cards.
+      if (this.turnPlayer.hand?.count !== 0) {
+        // Play card in behalf of the player if it's offline
+        this.playCard();
+        return;
+      }
 
-      // Skip turn if the player is offline
+      // Skip turn if the player is offline and doesn't have
+      // cards.
+      this.nextTurn();
+      return;
+    }
+
+    if (
+      this.turnPlayer.hand?.count === 0 &&
+      this.cardsInPlay.length !== this.maxCards
+    ) {
+      // Skip turn if the player doesn't have cards
       this.nextTurn();
 
       return;
@@ -517,7 +543,12 @@ export class GameHost extends Game {
       `Connection with Player ${this.turnPlayer.name} (${this.turnPlayer.uid}) lost`
     );
 
-    this.nextTurn();
+    if (this.cardsToPlay) {
+      // Play a card if the player disconnects while playing
+      this.playCard();
+    } else {
+      this.nextTurn();
+    }
   }
 
   @boundMethod
@@ -530,6 +561,10 @@ export class GameHost extends Game {
 
   @boundMethod
   private async playCard() {
+    if (this.cardsToPlay === 0) {
+      return;
+    }
+
     const card = this.turnPlayer.hand?.pickCard();
 
     if (!card) {
@@ -580,6 +615,7 @@ export class GameHost extends Game {
     }
   }
 
+  @boundMethod
   private winRound(
     player: ServerPlayer,
     reason: PlayingGameState["lastRoundWinnerReason"] = "cards"
@@ -592,6 +628,20 @@ export class GameHost extends Game {
     this.roundNumber++;
     this.cardsToPlay = 1;
     this.nextTurn();
+  }
+
+  @boundMethod
+  private finish() {
+    this.createNewState("finished");
+
+    this.turnIndex = -1;
+    this.cardsInPlay = [];
+    this.cardsToPlay = 1;
+    this.roundWinner = null;
+    this.lastRoundWinner = null;
+    this.lastRoundWinnerReason = null;
+    this.roundNumber = 0;
+    this.maxCards = 0;
   }
 }
 

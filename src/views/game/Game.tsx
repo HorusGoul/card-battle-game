@@ -9,6 +9,7 @@ import styles from "./Game.module.scss";
 import WaitingScreen from "../../components/waiting-screen";
 import CantJoinScreen from "../../components/cant-join-screen";
 import PlayingScreen from "../../components/playing-screen";
+import FinishedScreen from "../../components/finished-screen";
 
 function Game() {
   const params = useParams<{ uid: string }>();
@@ -62,21 +63,16 @@ function Host({ children }: HostProps) {
 function Guest() {
   const { state } = useGame<GameGuest>();
 
-  if (state.status === "connecting") {
-    return <LoadingScreen text="Attempting to join game..." />;
+  switch (state.status) {
+    case "connecting":
+      return <LoadingScreen text="Attempting to join game..." />;
+    case "waiting":
+      return <WaitingScreen />;
+    case "cannot-join":
+      return <CantJoinScreen />;
+    case "playing":
+      return <PlayingScreen />;
+    case "finished":
+      return <FinishedScreen />;
   }
-
-  if (state.status === "waiting") {
-    return <WaitingScreen />;
-  }
-
-  if (state.status === "cannot-join") {
-    return <CantJoinScreen />;
-  }
-
-  if (state.status === "playing") {
-    return <PlayingScreen />;
-  }
-
-  return <>Finished</>;
 }

@@ -31,6 +31,7 @@ export interface PlayingGameState {
 export interface FinishedGameState {
   status: "finished";
   winner: PlayerState;
+  players: PlayerState[];
 }
 
 export interface CannotJoinGameState {
