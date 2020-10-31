@@ -204,6 +204,10 @@ export abstract class Game {
     );
   }
 
+  cleanup() {
+    this.peer.destroy();
+  }
+
   @boundMethod
   protected setup(): void {
     this.peer.on("open", this.onPeerOpen);

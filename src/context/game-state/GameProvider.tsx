@@ -45,13 +45,30 @@ export interface GuestGameProviderProps extends GameProviderBaseProps {
 
 export type GameProviderProps = HostGameProviderProps | GuestGameProviderProps;
 
+const games: Record<string, Game> = {};
+
 export function GameProvider({ children, ...props }: GameProviderProps) {
-  const [game] = useState(() =>
-    props.type === "host" ? new GameHost(props) : new GameGuest(props)
-  );
+  const gameKey =
+    props.type === "host"
+      ? `${props.type}-${props.hostUid}`
+      : `${props.type}-${props.hostUid}-${props.player.uid}`;
+
+  if (!games[gameKey]) {
+    games[gameKey] =
+      props.type === "host" ? new GameHost(props) : new GameGuest(props);
+  }
+
+  useEffect(() => {
+    return () => {
+      games[gameKey].cleanup();
+      delete games[gameKey];
+    };
+  }, [gameKey]);
 
   return (
-    <GameContext.Provider value={{ game }}>{children}</GameContext.Provider>
+    <GameContext.Provider value={{ game: games[gameKey] }}>
+      {children}
+    </GameContext.Provider>
   );
 }
 
