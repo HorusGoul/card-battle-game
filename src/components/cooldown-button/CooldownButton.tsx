@@ -38,7 +38,7 @@ function CooldownButton({
     return () => {
       // eslint-disable-next-line react-hooks/exhaustive-deps
       if (timeoutRef.current !== null) {
-        clearTimeout();
+        clearTimeout(timeoutRef.current);
       }
     };
   }, []);
