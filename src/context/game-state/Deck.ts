@@ -95,7 +95,7 @@ function createCards({
 
       switch (type) {
         case "common":
-          displayText = index.toString();
+          displayText = String(index + 1);
           break;
         case "jack":
           displayText = "J";
