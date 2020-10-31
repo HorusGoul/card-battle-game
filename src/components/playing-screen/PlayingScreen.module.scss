@@ -96,7 +96,7 @@
   padding: 16px;
 }
 
-.playCardBtn {
+button.playCardBtn {
   background-color: var(--primary);
   color: var(--primary-text);
   padding: 16px 24px;
@@ -117,5 +117,40 @@
 
   [role="img"] {
     margin-right: 16px;
+  }
+}
+
+button.pairBtn {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  background-color: var(--offline);
+  color: var(--primary-text);
+  padding: 16px 24px;
+  width: 70px;
+  border-radius: 8px;
+  font-size: 2rem;
+  text-transform: uppercase;
+  font-weight: bold;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 288px;
+
+  &:disabled {
+    background-color: rgba(0, 0, 0, 0.2);
+    cursor: not-allowed;
+  }
+
+  [role="img"] {
+    margin-bottom: 16px;
+  }
+
+  .text {
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    letter-spacing: -4px;
   }
 }

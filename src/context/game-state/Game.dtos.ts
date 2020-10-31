@@ -39,11 +39,17 @@ export interface PlayCardDto extends DtoBase {
   payload?: null;
 }
 
+export interface GrabCardsDto extends DtoBase {
+  type: "grab-cards";
+  payload?: null;
+}
+
 export type GameDto =
   | RequestToJoinDto
   | RequestToJoinResponseDto
   | SyncGameStateDto
-  | PlayCardDto;
+  | PlayCardDto
+  | GrabCardsDto;
 
 export function createDto(dto: Omit<GameDto, "id">): GameDto {
   return {

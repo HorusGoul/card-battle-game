@@ -23,6 +23,7 @@ export interface PlayingGameState {
   cardsInPlay: Card[];
   cardsToPlay: number;
   lastRoundWinner: PlayerState | null;
+  lastRoundWinnerReason: "pair" | "cards" | null;
   players: PlayerState[];
   round: number;
 }

@@ -1,4 +1,5 @@
-.lastRoundWinner {
+.lastRoundWinner,
+.pairs {
   position: absolute;
   left: 16px;
   top: 140px;
@@ -30,6 +31,11 @@
     font-size: 18px;
     font-weight: bold;
   }
+}
+
+.pairs {
+  top: 188px;
+  color: #ffffff;
 }
 
 @keyframes enter {

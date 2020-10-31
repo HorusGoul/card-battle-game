@@ -9,6 +9,7 @@ import { CSSTransition, TransitionGroup } from "react-transition-group";
 import { useDebounce } from "use-debounce";
 import CooldownButton from "../cooldown-button";
 import { GiCardPlay } from "react-icons/gi";
+import { HiSpeakerphone } from "react-icons/hi";
 
 function PlayingScreen() {
   const { state, game } = useGame<GameGuest, PlayingGameState>();
@@ -28,7 +29,11 @@ function PlayingScreen() {
   return (
     <div className={styles.playingScreen}>
       {state.lastRoundWinner && (
-        <LastRoundWinner key={state.round} name={state.lastRoundWinner.name} />
+        <LastRoundWinner
+          key={state.round}
+          name={state.lastRoundWinner.name}
+          reason={state.lastRoundWinnerReason}
+        />
       )}
 
       <div className={styles.players}>
@@ -62,6 +67,12 @@ function PlayingScreen() {
             </CSSTransition>
           ))}
       </TransitionGroup>
+
+      <CooldownButton className={styles.pairBtn} onClick={game.grabCards}>
+        <HiSpeakerphone aria-hidden="true" role="img" />
+
+        <span className={styles.text}>Pair</span>
+      </CooldownButton>
 
       <div className={styles.bottom}>
         <CooldownButton

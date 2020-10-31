@@ -1,7 +1,8 @@
+import { boundMethod } from "autobind-decorator";
 import { DataConnection } from "peerjs";
 import { Deck } from "./Deck";
-import { Game, RPCOptions } from "./Game";
-import { GameDto } from "./Game.dtos";
+import { Game, GameHost, RPCOptions } from "./Game";
+import { GameDto, isGameDto } from "./Game.dtos";
 
 export interface PlayerConstructorParams {
   uid: string;
@@ -31,9 +32,11 @@ export class Player {
 
 export interface ServerPlayerConstructorParams extends PlayerConstructorParams {
   connection: DataConnection;
+  game: GameHost;
 }
 
 export class ServerPlayer extends Player {
+  game: GameHost;
   connection: DataConnection;
   online = false;
 
@@ -41,19 +44,74 @@ export class ServerPlayer extends Player {
     super(params);
 
     this.connection = connection;
+    this.game = params.game;
+    this.setup();
   }
 
-  public request<T extends GameDto>(
+  @boundMethod
+  setup() {
+    this.connection.on("data", this.onPlayerData);
+    this.connection.on("close", this.onPlayerClose);
+    this.connection.on("error", this.onPlayerError);
+  }
+
+  @boundMethod
+  cleanup() {
+    this.connection.off("data", this.onPlayerData);
+    this.connection.off("close", this.onPlayerClose);
+    this.connection.off("error", this.onPlayerError);
+  }
+
+  request<T extends GameDto>(
     dto: GameDto,
     options: RPCOptions = {}
   ): Promise<T> {
     return this.game.rpcCall<T>(dto, this.connection, options);
   }
 
-  public waitForMessageOfType<T extends GameDto>(
+  waitForMessageOfType<T extends GameDto>(
     type: GameDto["type"],
     options: RPCOptions = {}
   ): Promise<T> {
     return this.game.waitForMessageOfType<T>(type, this.connection, options);
+  }
+
+  @boundMethod
+  private onPlayerData(data: unknown) {
+    if (!isGameDto(data)) {
+      this.game.log("🔽", "Unknown received message");
+
+      return;
+    }
+
+    switch (data.type) {
+      case "grab-cards":
+        this.game.grabCards(this);
+        return;
+    }
+
+    this.game.log(
+      "🔽",
+      "Message received.",
+      "Type:",
+      data.type,
+      "Content:",
+      data
+    );
+  }
+
+  @boundMethod
+  private onPlayerClose() {
+    this.online = false;
+
+    this.game.error(`Connection with Player ${this.name} (${this.uid}) lost`);
+  }
+
+  @boundMethod
+  private onPlayerError(error: unknown) {
+    this.game.error(
+      `An error happened in the connection with the Player ${this.name} (${this.uid})`,
+      error
+    );
   }
 }

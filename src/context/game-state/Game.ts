@@ -10,7 +10,12 @@ import {
   RequestToJoinResponseDto,
 } from "./Game.dtos";
 import { Host } from "./Host";
-import { GameState, initialGameState, PlayerState } from "./State";
+import {
+  GameState,
+  initialGameState,
+  PlayerState,
+  PlayingGameState,
+} from "./State";
 import { Card } from "./Card";
 
 const HOST_PREFIX = "host" as const;
@@ -177,6 +182,28 @@ export abstract class Game {
   }
 
   @boundMethod
+  log(...params: any[]) {
+    const onlineStatus = this.online ? `🟢` : `🔴`;
+
+    console.log(
+      `%c${onlineStatus} [${this.constructor.name}]`,
+      "color: blue;",
+      ...params
+    );
+  }
+
+  @boundMethod
+  error(...params: any[]) {
+    const onlineStatus = this.online ? `🟢` : `🔴`;
+
+    console.error(
+      `%c${onlineStatus} [${this.constructor.name}]`,
+      "color: red;",
+      ...params
+    );
+  }
+
+  @boundMethod
   protected setup(): void {
     this.peer.on("open", this.onPeerOpen);
     this.peer.on("disconnected", this.onPeerDisconnected);
@@ -205,28 +232,6 @@ export abstract class Game {
   }
 
   @boundMethod
-  protected log(...params: any[]) {
-    const onlineStatus = this.online ? `🟢` : `🔴`;
-
-    console.log(
-      `%c${onlineStatus} [${this.constructor.name}]`,
-      "color: blue;",
-      ...params
-    );
-  }
-
-  @boundMethod
-  protected error(...params: any[]) {
-    const onlineStatus = this.online ? `🟢` : `🔴`;
-
-    console.error(
-      `%c${onlineStatus} [${this.constructor.name}]`,
-      "color: red;",
-      ...params
-    );
-  }
-
-  @boundMethod
   protected notifySubscriptions() {
     for (const subscription of this.updateSubscriptions) {
       subscription(this);
@@ -241,6 +246,7 @@ export class GameHost extends Game {
   cardsToPlay = 1;
   roundWinner: ServerPlayer | null = null;
   lastRoundWinner: ServerPlayer | null = null;
+  lastRoundWinnerReason: PlayingGameState["lastRoundWinnerReason"] = null;
   roundNumber = 0;
 
   get turnPlayer() {
@@ -280,6 +286,15 @@ export class GameHost extends Game {
     }
 
     this.nextTurn();
+  }
+
+  @boundMethod
+  grabCards(player: ServerPlayer) {
+    if (!this.canGrabCards) {
+      return;
+    }
+
+    this.winRound(player, "pair");
   }
 
   @boundMethod
@@ -408,6 +423,7 @@ export class GameHost extends Game {
             players.find(
               (player) => player.uid === this.lastRoundWinner?.uid
             ) ?? null,
+          lastRoundWinnerReason: this.lastRoundWinnerReason,
           round: this.roundNumber,
         };
         break;
@@ -550,11 +566,8 @@ export class GameHost extends Game {
         if (this.cardsToPlay === 0 || this.turnPlayer.hand?.count === 0) {
           if (this.roundWinner) {
             // End of round
-            this.roundWinner.hand?.addCardsToBottom(...this.cardsInPlay);
-            this.cardsInPlay = [];
-            this.lastRoundWinner = this.roundWinner;
-            this.roundWinner = null;
-            this.roundNumber++;
+            this.winRound(this.roundWinner);
+            return;
           }
 
           this.cardsToPlay = 1;
@@ -564,6 +577,20 @@ export class GameHost extends Game {
 
         return;
     }
+  }
+
+  private winRound(
+    player: ServerPlayer,
+    reason: PlayingGameState["lastRoundWinnerReason"] = "cards"
+  ) {
+    player.hand?.addCardsToBottom(...this.cardsInPlay);
+    this.cardsInPlay = [];
+    this.lastRoundWinner = player;
+    this.lastRoundWinnerReason = reason;
+    this.roundWinner = null;
+    this.roundNumber++;
+    this.cardsToPlay = 1;
+    this.nextTurn();
   }
 }
 
@@ -611,6 +638,21 @@ export class GameGuest extends Game {
     this.log("Play card");
 
     this.host?.request(playCardDto, { waitForReply: false });
+  }
+
+  @boundMethod
+  grabCards() {
+    if (this.state.status !== "playing") {
+      return;
+    }
+
+    const grabCardsDto = createDto({
+      type: "grab-cards",
+    });
+
+    this.log("Grab cards");
+
+    this.host?.request(grabCardsDto, { waitForReply: false });
   }
 
   @boundMethod
