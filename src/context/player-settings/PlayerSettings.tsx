@@ -1,4 +1,10 @@
-import React, { createContext, useCallback, useContext, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import uid from "uid";
 
 export interface PlayerSettings {
@@ -35,11 +41,19 @@ function createUid() {
   return uid(UID_LENGTH).replaceAll("O", "0").toUpperCase();
 }
 
+const LS_SETTINGS_KEY = `card-battle::player-settings`;
+
 export function PlayerSettingsProvider({
   children,
 }: PlayerSettingsProviderProps) {
   // TODO: persist settings
   const [settings, setSettings] = useState<PlayerSettings>(() => {
+    const persistedSettings = localStorage.getItem(LS_SETTINGS_KEY);
+
+    if (persistedSettings) {
+      return JSON.parse(persistedSettings);
+    }
+
     const playerUid = createUid();
 
     return {
@@ -47,6 +61,10 @@ export function PlayerSettingsProvider({
       uid: playerUid,
     };
   });
+
+  useEffect(() => {
+    localStorage.setItem(LS_SETTINGS_KEY, JSON.stringify(settings));
+  }, [settings]);
 
   const updateSettings: PlayerSettingsContextType["updateSettings"] = useCallback(
     (partial) => {
