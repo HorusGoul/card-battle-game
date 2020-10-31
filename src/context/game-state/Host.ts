@@ -1,4 +1,4 @@
-import { DataConnection } from "peerjs";
+import { DataConnection } from "skyway-js";
 import { Game, RPCOptions } from "./Game";
 import { GameDto } from "./Game.dtos";
 

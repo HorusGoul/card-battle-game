@@ -1,5 +1,5 @@
 import { boundMethod } from "autobind-decorator";
-import { DataConnection } from "peerjs";
+import { DataConnection } from "skyway-js";
 import { Deck } from "./Deck";
 import { Game, GameHost, RPCOptions } from "./Game";
 import { GameDto, isGameDto } from "./Game.dtos";

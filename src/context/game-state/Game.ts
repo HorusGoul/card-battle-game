@@ -1,7 +1,7 @@
 import { createGameDeck, Deck } from "./Deck";
 import { Player, ServerPlayer } from "./Player";
 import { boundMethod } from "autobind-decorator";
-import Peer, { DataConnection } from "peerjs";
+import Peer, { DataConnection } from "skyway-js";
 import {
   createDto,
   GameDto,
@@ -47,11 +47,8 @@ export abstract class Game {
   constructor({ hostUid, peerId = hostUid }: GameConstructorParams) {
     this.hostUid = hostUid;
 
-    // TODO: Specify TURN servers
     this.peer = new Peer(peerId, {
-      host: "card-battle-game-peerjs-server.herokuapp.com",
-      port: 443,
-      secure: true,
+      key: process.env.REACT_APP_SKYWAY_KEY || "",
     });
 
     this.setup();
@@ -88,12 +85,12 @@ export abstract class Game {
           connection.close();
         }
 
-        reject(new Error(`Connection with ${connection.peer} timed out`));
+        reject(new Error(`Connection with ${connection.remoteId} timed out`));
       }, timeoutMs);
 
       function onClose() {
         offEvents();
-        reject(new Error(`Connection with ${connection.peer} closed`));
+        reject(new Error(`Connection with ${connection.remoteId} closed`));
       }
 
       function onError(error: any) {
@@ -146,12 +143,12 @@ export abstract class Game {
           connection.close();
         }
 
-        reject(new Error(`Connection with ${connection.peer} timed out`));
+        reject(new Error(`Connection with ${connection.remoteId} timed out`));
       }, timeoutMs);
 
       function onClose() {
         offEvents();
-        reject(new Error(`Connection with ${connection.peer} closed`));
+        reject(new Error(`Connection with ${connection.remoteId} closed`));
       }
 
       function onError(error: any) {
@@ -236,7 +233,7 @@ export abstract class Game {
 
   @boundMethod
   protected onPeerConnection(connection: DataConnection) {
-    this.log("Peer connected with ID", connection.peer);
+    this.log("Peer connected with ID", connection.remoteId);
   }
 
   @boundMethod
@@ -343,7 +340,7 @@ export class GameHost extends Game {
   @boundMethod
   private async joinFlow(connection: DataConnection) {
     try {
-      this.log("Waiting for a Request to Join from", connection.peer);
+      this.log("Waiting for a Request to Join from", connection.remoteId);
 
       const requestToJoinDto = await this.waitForMessageOfType<
         RequestToJoinDto
@@ -799,19 +796,17 @@ export class GameGuest extends Game {
 
   private async connectToHost() {
     try {
-      const connection = this.peer.connect(`${HOST_PREFIX}${this.hostUid}`, {
-        reliable: true,
-      });
+      const connection = this.peer.connect(`${HOST_PREFIX}${this.hostUid}`);
 
       await this.connectOrFail(connection);
 
-      this.log("Connected to Host with id", connection.peer);
+      this.log("Connected to Host with id", connection.remoteId);
 
       await this.requestToJoinGame(connection);
 
       this.setupHostEvents();
 
-      this.log(`✅ Connection to Host (${connection.peer}) successful`);
+      this.log(`✅ Connection to Host (${connection.remoteId}) successful`);
     } catch (e) {
       this.setState({
         status: "cannot-join",
@@ -835,7 +830,7 @@ export class GameGuest extends Game {
 
         connection.close();
         reject(
-          new Error(`Cannot connect to the Host with id ${connection.peer}`)
+          new Error(`Cannot connect to the Host with id ${connection.remoteId}`)
         );
       }, RPC_DEFAULT_TIMEOUT_MS);
 
