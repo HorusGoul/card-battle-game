@@ -1,0 +1,57 @@
+.dialog {
+  min-width: 320px;
+  border-radius: 8px;
+  padding: 24px 16px;
+  z-index: 30;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.rules {
+  padding: 16px 0;
+
+  li {
+    margin-top: 8px;
+    list-style: disc;
+    margin-left: 24px;
+  }
+}
+
+button.gotItBtn {
+  background-color: var(--primary);
+  color: var(--primary-text);
+  padding: 16px 24px;
+  height: 40px;
+  border-radius: 4px;
+  font-size: 1rem;
+  text-transform: uppercase;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 16px;
+  border: none;
+  cursor: pointer;
+}
+
+button.openGuide {
+  background-color: rgba(0, 0, 0, 0.1);
+  color: var(--text-color);
+  padding: 16px 24px;
+  height: 40px;
+  border-radius: 4px;
+  font-size: 1rem;
+  text-transform: uppercase;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 16px;
+  border: none;
+  cursor: pointer;
+}

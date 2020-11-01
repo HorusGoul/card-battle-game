@@ -2,6 +2,7 @@ import classNames from "classnames";
 import React from "react";
 import { useGame, WaitingGameState } from "../../context/game-state";
 import { GameGuest } from "../../context/game-state/Game";
+import HowToPlay from "../how-to-play";
 import styles from "./WaitingScreen.module.scss";
 
 function WaitingScreen() {
@@ -52,6 +53,10 @@ function WaitingScreen() {
             </li>
           ))}
         </ul>
+
+        <h3 className={styles.subtitle}>How to play</h3>
+
+        <HowToPlay />
       </div>
     </div>
   );
