@@ -46,7 +46,6 @@ const LS_SETTINGS_KEY = `card-battle::player-settings`;
 export function PlayerSettingsProvider({
   children,
 }: PlayerSettingsProviderProps) {
-  // TODO: persist settings
   const [settings, setSettings] = useState<PlayerSettings>(() => {
     const persistedSettings = localStorage.getItem(LS_SETTINGS_KEY);
 
