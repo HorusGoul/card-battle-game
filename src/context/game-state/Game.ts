@@ -229,6 +229,8 @@ export abstract class Game {
 
     this.log("Offline");
     this.notifySubscriptions();
+
+    // TODO: Add disconnected state
   }
 
   @boundMethod
@@ -689,7 +691,6 @@ export class GameHost extends Game {
     this.lastRoundWinner = null;
     this.lastRoundWinnerReason = null;
     this.roundNumber = 0;
-    this.maxCards = 0;
   }
 
   @boundMethod
